@@ -2,6 +2,7 @@
 // Production React Native / Expo frontend for AETHER
 // Required packages:
 // npx expo install expo-video expo-linear-gradient expo-secure-store
+// Web build intentionally avoids loading expo-video / expo-secure-store at runtime.
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -19,11 +20,10 @@ import {
   Text,
   TextInput,
   View,
+  Linking,
   useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as SecureStore from 'expo-secure-store';
-import { VideoView, useVideoPlayer } from 'expo-video';
 
 const API_BASE = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '');
 if (!API_BASE && Platform.OS !== 'web') {
@@ -44,15 +44,26 @@ const C = {
 };
 
 async function tokenGet() {
-  if (Platform.OS === 'web') return globalThis.localStorage?.getItem('aether_token') || null;
+  if (Platform.OS === 'web') {
+    try {
+      return globalThis.localStorage?.getItem('aether_token') || null;
+    } catch {
+      return null;
+    }
+  }
+  // Keep SecureStore native-only so the web bundle never initializes Expo native modules.
+  const SecureStore = require('expo-secure-store');
   return SecureStore.getItemAsync('aether_token');
 }
 async function tokenSet(value) {
   if (Platform.OS === 'web') {
-    if (value) globalThis.localStorage?.setItem('aether_token', value);
-    else globalThis.localStorage?.removeItem('aether_token');
+    try {
+      if (value) globalThis.localStorage?.setItem('aether_token', value);
+      else globalThis.localStorage?.removeItem('aether_token');
+    } catch {}
     return;
   }
+  const SecureStore = require('expo-secure-store');
   if (value) await SecureStore.setItemAsync('aether_token', value);
   else await SecureStore.deleteItemAsync('aether_token');
 }
@@ -123,17 +134,54 @@ function ContentRow({ title, data, onPlay }) {
   );
 }
 
-function PlayerModal({ item, visible, onClose, inList, onToggleList, signedIn }) {
-  const source = item?.videoUrl || null;
-  const player = useVideoPlayer(source, p => {
+function NativeVideoPlayer({ source, visible }) {
+  // This component is never rendered on web. Keeping the require here prevents
+  // expo-video's native SharedObject implementation from initializing in browsers.
+  const { VideoView, useVideoPlayer } = require('expo-video');
+  const player = useVideoPlayer(source || null, p => {
     p.loop = false;
-    if (visible) p.play();
+    if (visible && source) p.play();
   });
 
   useEffect(() => {
     if (!visible) player.pause();
     else if (source) player.play();
   }, [visible, source, player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.video}
+      nativeControls
+      allowsFullscreen
+      allowsPictureInPicture
+    />
+  );
+}
+
+function WebVideoPlayer({ source }) {
+  if (!source) {
+    return (
+      <View style={[styles.video, styles.videoFallback]}>
+        <Text style={styles.helper}>Video is not available.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <video
+      src={source}
+      controls
+      autoPlay
+      playsInline
+      preload="metadata"
+      style={{ width: '100%', aspectRatio: '16 / 9', backgroundColor: '#000', borderRadius: 12 }}
+    />
+  );
+}
+
+function PlayerModal({ item, visible, onClose, inList, onToggleList, signedIn }) {
+  const source = item?.videoUrl || null;
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -145,13 +193,15 @@ function PlayerModal({ item, visible, onClose, inList, onToggleList, signedIn })
 
         {item ? (
           <ScrollView contentContainerStyle={styles.playerBody}>
-            <VideoView
-              player={player}
-              style={styles.video}
-              nativeControls
-              allowsFullscreen
-              allowsPictureInPicture
-            />
+            {Platform.OS === 'web' ? (
+              <WebVideoPlayer source={source} />
+            ) : source ? (
+              <NativeVideoPlayer source={source} visible={visible} />
+            ) : (
+              <View style={[styles.video, styles.videoFallback]}>
+                <Text style={styles.helper}>Video is not available.</Text>
+              </View>
+            )}
             <Text style={styles.playerTitle}>{item.title}</Text>
             <Text style={styles.playerCreator}>{item.creator?.name}</Text>
             <Text style={styles.playerDesc}>{item.description}</Text>
