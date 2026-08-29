@@ -11,7 +11,8 @@
     "build": "expo export --platform web --output-dir dist",
     "build:web": "npm run build",
     "preview": "npx serve dist",
-    "check": "npx expo-doctor"
+    "check": "npx expo-doctor",
+    "test": "node --test playerReliability.test.js"
   },
   "engines": {
     "node": ">=20.19.0"
