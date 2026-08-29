@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "AETHER",
+    "slug": "aether-ai-creators",
+    "version": "2.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": ["assets/**/*"],
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "AETHER — AI Originals"
+    }
+  }
+}
