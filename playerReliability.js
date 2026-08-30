@@ -28,9 +28,8 @@ function resolveContent(localItem, backendItems) {
     image: localItem.image,
     creator: backendItem.creator || localItem.creator,
   };
-  resolved.videoUrl = isValidHttpsVideoUrl(backendItem.videoUrl)
-    ? backendItem.videoUrl.trim()
-    : localItem.videoUrl;
+  resolved.videoUrl = isValidHttpsVideoUrl(backendItem.videoUrl) ? backendItem.videoUrl.trim() : undefined;
+  resolved.isPlayable = backendItem.isPlayable === true;
   return resolved;
 }
 
@@ -45,12 +44,12 @@ async function inspectVideoUrl(url, fetchImpl = globalThis.fetch, signal) {
     const response = await fetchImpl(url.trim(), { method: 'GET', headers: { Range: 'bytes=0-1' }, signal });
     const contentType = response.headers?.get?.('content-type') || '';
     if (!response.ok || !isPlayableMediaType(contentType)) {
-      return { playable: false, status: response.status, contentType, reason: `The media host returned ${response.status || 'an invalid response'}${contentType ? ` (${contentType})` : ''}.` };
+      return { playable: false, status: response.status, contentType, retryable: response.status !== 403 && response.status !== 404 };
     }
     response.body?.cancel?.();
     return { playable: true, contentType };
   } catch (error) {
-    return { playable: false, reason: error.name === 'AbortError' ? 'Media validation was cancelled.' : 'The media host could not be reached.' };
+    return { playable: false, retryable: error.name !== 'AbortError' };
   }
 }
 
