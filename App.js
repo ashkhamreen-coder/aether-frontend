@@ -10,7 +10,7 @@ const { getApiBaseUrl } = require('./apiConfig');
 const { getResponsiveState } = require('./responsive');
 const { CATEGORY_CONFIG, getEditorialRail, selectHeroes } = require('./editorial');
 
-const API_BASE = getApiBaseUrl();
+let API_BASE;
 const C={bg:'#02070b',panel:'#081016',text:'#fff',muted:'#a8afb8',copper:'#ef9368',cyan:'#21d7e8',pink:'#d349d8',red:'#ff384f',orange:'#ff8c2f',border:'rgba(255,255,255,.13)'};
 
 const A={
@@ -41,8 +41,12 @@ const HEROES=EDITORIAL.slice(0,5);
 
 async function tokenGet(){if(Platform.OS==='web'){try{return globalThis.localStorage?.getItem('aether_token')||null}catch{return null}} const S=require('expo-secure-store'); return S.getItemAsync('aether_token')}
 async function tokenSet(v){if(Platform.OS==='web'){try{v?globalThis.localStorage?.setItem('aether_token',v):globalThis.localStorage?.removeItem('aether_token')}catch{} return} const S=require('expo-secure-store'); return v?S.setItemAsync('aether_token',v):S.deleteItemAsync('aether_token')}
-const apiClient=createApiClient({baseUrl:API_BASE,getToken:tokenGet,onUnauthorized:()=>tokenSet(null)});
-const api=(path,options)=>apiClient.request(path,options);
+let apiClient;
+function configureApi(){
+ if(!apiClient){API_BASE=getApiBaseUrl();apiClient=createApiClient({baseUrl:API_BASE,getToken:tokenGet,onUnauthorized:()=>tokenSet(null)})}
+ return API_BASE;
+}
+const api=(path,options)=>{configureApi();return apiClient.request(path,options)};
 
 class AppErrorBoundary extends Component{constructor(props){super(props);this.state={error:null}}static getDerivedStateFromError(error){return{error}}componentDidCatch(error,info){console.error('Ripple render error',error,info)}render(){if(!this.state.error)return this.props.children;return <SafeAreaView style={styles.fatal}><Logo/><Text style={styles.playerStatusTitle}>Something went wrong</Text><Text style={styles.playerStatusText}>Ripple could not display this screen. Your account and saved items are safe.</Text><Button onPress={()=>this.setState({error:null})}>Try again</Button></SafeAreaView>}}
 
@@ -100,6 +104,7 @@ function CreatorUpload({user,onRequireAuth}){
 }
 
 function RippleApp(){
+ configureApi();
  const {width,height}=useWindowDimensions(); const responsive=getResponsiveState(width); const {compactPhone,phone,tablet,desktop,wideDesktop}=responsive; const bottomNavigation=phone||tablet;
  const[screen,setScreen]=useState('home');const[backend,setBackend]=useState([]);const[creators,setCreators]=useState([]);const[user,setUser]=useState(null);const[myList,setMyList]=useState([]);const[auth,setAuth]=useState(false);const[player,setPlayer]=useState(null);const[playNotice,setPlayNotice]=useState(null);const[loading,setLoading]=useState(true);const[apiError,setApiError]=useState('');const[filter,setFilter]=useState('all');const[query,setQuery]=useState('');const[prompt,setPrompt]=useState('A forgotten observatory maps a celestial river above an ancient kingdom.');const[enhanced,setEnhanced]=useState('');const[heroIndex,setHeroIndex]=useState(0);
  const load=useCallback(async()=>{setLoading(true);setApiError('');try{const [healthResult,contentResult,creatorResult]=await Promise.allSettled([api('/health',{retries:1}),api('/api/content'),api('/api/creators')]);if(healthResult.status==='rejected')throw healthResult.reason;if(contentResult.status==='rejected')throw contentResult.reason;setBackend(extractList(contentResult.value,'content').map(normalizeItem));if(creatorResult.status==='fulfilled')setCreators(extractList(creatorResult.value,'creators'));const t=await tokenGet();if(t){try{const [me,list]=await Promise.all([api('/api/me'),api('/api/my-list')]);setUser(me.user||me);setMyList(extractList(list,'items'))}catch(e){if(e.status===401){await tokenSet(null);setUser(null)}else throw e}}}catch(e){setApiError(e.message||'Ripple could not reach the service.');setBackend([])}finally{setLoading(false)}},[]);useEffect(()=>{load()},[load]);
