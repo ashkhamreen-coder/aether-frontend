@@ -8,14 +8,14 @@ class ApiError extends Error {
   }
 }
 
-function createApiClient({ baseUrl, getToken, onUnauthorized, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+function createApiClient({ baseUrl, getToken, refreshToken, onUnauthorized, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
   const base = String(baseUrl || '').trim().replace(/\/+$/, '');
   const pending = new Map();
   async function request(path, options = {}) {
     if (!base) throw new ApiError('Ripple is not connected. Set EXPO_PUBLIC_API_URL and rebuild the app.', { code: 'NOT_CONFIGURED' });
     const method = String(options.method || 'GET').toUpperCase();
     const normalizedPath = `/${String(path).replace(/^\/+/, '')}`;
-    const dedupeKey = method === 'GET' && !options.signal ? normalizedPath : null;
+    const dedupeKey = method === 'GET' && !options.signal && !options._refreshed ? normalizedPath : null;
     if (dedupeKey && pending.has(dedupeKey)) return pending.get(dedupeKey);
     const run = async () => {
     const retries = method === 'GET' ? (options.retries ?? 2) : 0;
@@ -28,12 +28,16 @@ function createApiClient({ baseUrl, getToken, onUnauthorized, fetchImpl = global
       try {
         const token = await getToken?.();
         const response = await fetchImpl(`${base}${normalizedPath}`, {
-          ...options,
+          ...Object.fromEntries(Object.entries(options).filter(([key]) => !key.startsWith('_'))),
           signal: controller.signal,
           headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
         });
         const type = response.headers?.get?.('content-type') || '';
         const data = type.includes('json') ? await response.json().catch(() => ({})) : {};
+        if (response.status === 401 && refreshToken && !options._refreshed) {
+          const refreshed = await refreshToken();
+          if (refreshed) return request(normalizedPath, { ...options, _refreshed: true, retries: 0 });
+        }
         if (response.status === 401) await onUnauthorized?.();
         if (!response.ok) throw new ApiError(data.error || data.message || `Request failed (${response.status})`, { status: response.status, code: 'HTTP_ERROR' });
         return data;
