@@ -1,0 +1,6 @@
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ContentCard } from './ContentCard';
+import { tokens } from '../theme/tokens';
+export function ContentRail({row,onOpen,technical=false}) { if (!row?.items?.length) return null; return <View style={s.section}><View style={s.head}><View><Text accessibilityRole="header" style={s.title}>{row.title}</Text>{row.reason?<Text style={s.reason}>{row.reason}</Text>:null}</View>{row.nextCursor?<Pressable accessibilityRole="button"><Text style={s.view}>View all</Text></Pressable>:null}</View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rail}>{row.items.map((item,index)=><ContentCard key={item.id||item._id} item={item} technical={technical} rank={row.displayRanking===true&&Number.isInteger(item.rank)?item.rank:undefined} onOpen={onOpen}/>)}</ScrollView></View>; }
+const s=StyleSheet.create({section:{marginTop:30},head:{paddingHorizontal:24,marginBottom:12,flexDirection:'row',justifyContent:'space-between',alignItems:'flex-end'},title:{color:tokens.color.text,fontSize:21,fontWeight:'850'},reason:{color:tokens.color.muted,fontSize:12,marginTop:4},view:{color:tokens.color.accentSoft,fontWeight:'700'},rail:{paddingHorizontal:24,paddingBottom:8,gap:12}});

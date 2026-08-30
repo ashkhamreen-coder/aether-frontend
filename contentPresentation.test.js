@@ -1,0 +1,5 @@
+const test=require('node:test');const assert=require('node:assert/strict');const {TECHNICAL_TEST_TITLE,isTechnicalTest,visibleRows,displayedRank}=require('./contentPresentation');
+test('technical playback content is classified and excluded from ordinary backend rows',()=>{const testVideo={id:'test',title:TECHNICAL_TEST_TITLE};assert.equal(isTechnicalTest(testVideo),true);assert.deepEqual(visibleRows([{title:'Trending',items:[testVideo,{id:'real',title:'Real'}]}])[0].items.map(x=>x.id),['real'])});
+test('empty recommendation rows remain hidden',()=>assert.deepEqual(visibleRows([{title:'Empty',items:[]}]),[]));
+test('rank appears only when both row and item provide valid ranking',()=>{assert.equal(displayedRank({displayRanking:true},{rank:1}),1);assert.equal(displayedRank({displayRanking:false},{rank:1}),null);assert.equal(displayedRank({displayRanking:true},{}),null)});
+test('consumer navigation does not expose Creator Studio',()=>{const fs=require('node:fs');const navigation=fs.readFileSync('src/components/Header.js','utf8')+fs.readFileSync('src/components/MobileNavigation.js','utf8');assert.doesNotMatch(navigation,/Creator Studio/i)});
