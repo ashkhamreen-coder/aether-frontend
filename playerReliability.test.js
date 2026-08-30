@@ -1,6 +1,34 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { isValidHttpsVideoUrl, resolveContent, resolveWebPoster } = require('./playerReliability');
+const { isHlsUrl, isValidHttpsVideoUrl, playbackDecision, resolveContent, resolveWebPoster } = require('./playerReliability');
+
+test('opens successful HTTPS MP4 playback only when ready', () => {
+  assert.equal(playbackDecision({ mediaStatus: 'ready', videoUrl: 'https://cdn.example.com/movie.mp4' }).kind, 'ready');
+});
+
+test('recognises HLS URLs for native or hls.js fallback', () => {
+  assert.equal(isHlsUrl('https://cdn.example.com/master.m3u8'), true);
+  assert.equal(isHlsUrl('https://cdn.example.com/stream', 'application/vnd.apple.mpegurl'), true);
+});
+
+test('keeps pending and missing video out of the player', () => {
+  assert.equal(playbackDecision({ mediaStatus: 'pending' }).kind, 'pending');
+  assert.equal(playbackDecision({ mediaStatus: 'ready', videoUrl: null }).kind, 'unavailable');
+  assert.equal(playbackDecision({ mediaStatus: 'failed', videoUrl: 'https://cdn.example.com/movie.mp4' }).kind, 'unavailable');
+});
+
+test('player close and reopen decisions do not retain prior media', () => {
+  const first = playbackDecision({ mediaStatus:'ready', videoUrl:'https://cdn.example.com/first.mp4' });
+  const reopened = playbackDecision({ mediaStatus:'ready', videoUrl:'https://cdn.example.com/second.mp4' });
+  assert.equal(first.playback.videoUrl.endsWith('first.mp4'), true);
+  assert.equal(reopened.playback.videoUrl.endsWith('second.mp4'), true);
+});
+
+test('no blank-screen regression: every non-ready payload has a visible state', () => {
+  for (const payload of [{}, { mediaStatus:'failed' }, { mediaStatus:'ready', videoUrl:'javascript:void(0)' }]) {
+    assert.notEqual(playbackDecision(payload).kind, 'ready');
+  }
+});
 
 test('accepts only non-empty HTTPS video URLs', () => {
   assert.equal(isValidHttpsVideoUrl('https://cdn.example.com/movie.mp4'), true);

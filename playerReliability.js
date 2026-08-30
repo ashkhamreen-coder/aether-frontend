@@ -38,6 +38,24 @@ function isPlayableMediaType(value) {
   return type.startsWith('video/') || ['application/vnd.apple.mpegurl', 'application/x-mpegurl'].includes(type);
 }
 
+function isHlsUrl(value, mimeType = '') {
+  return /\.m3u8(?:$|[?#])/i.test(String(value || '')) || /(?:mpegurl|x-mpegurl)/i.test(String(mimeType || ''));
+}
+
+function resolvePlayback(payload) {
+  const data = payload?.playback || payload?.data || payload || {};
+  const mediaStatus = String(data.mediaStatus || data.status || '').toLowerCase();
+  const videoUrl = data.videoUrl || data.playbackUrl || data.url;
+  return { ...data, mediaStatus, videoUrl: isValidHttpsVideoUrl(videoUrl) ? videoUrl.trim() : null };
+}
+
+function playbackDecision(payload) {
+  const playback = resolvePlayback(payload);
+  if (playback.mediaStatus === 'pending' || playback.mediaStatus === 'processing') return { kind: 'pending', playback };
+  if (playback.mediaStatus !== 'ready' || !playback.videoUrl) return { kind: 'unavailable', playback };
+  return { kind: 'ready', playback };
+}
+
 async function inspectVideoUrl(url, fetchImpl = globalThis.fetch, signal) {
   if (!isValidHttpsVideoUrl(url)) return { playable: false, reason: 'A secure media URL was not provided.' };
   try {
@@ -53,4 +71,4 @@ async function inspectVideoUrl(url, fetchImpl = globalThis.fetch, signal) {
   }
 }
 
-module.exports = { inspectVideoUrl, isPlayableMediaType, isValidHttpsVideoUrl, resolveContent, resolveWebPoster };
+module.exports = { inspectVideoUrl, isHlsUrl, isPlayableMediaType, isValidHttpsVideoUrl, playbackDecision, resolveContent, resolvePlayback, resolveWebPoster };
