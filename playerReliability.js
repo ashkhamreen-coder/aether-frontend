@@ -8,6 +8,14 @@ function isValidHttpsVideoUrl(value) {
   }
 }
 
+function resolveWebPoster(image) {
+  if (typeof image === 'string' && image.trim()) return image.trim();
+  if (image && typeof image === 'object' && typeof image.uri === 'string' && image.uri.trim()) {
+    return image.uri.trim();
+  }
+  return null;
+}
+
 function resolveContent(localItem, backendItems) {
   const backendItem = backendItems.find(
     item => String(item.title).toLowerCase() === localItem.title.toLowerCase(),
@@ -26,4 +34,4 @@ function resolveContent(localItem, backendItems) {
   return resolved;
 }
 
-module.exports = { isValidHttpsVideoUrl, resolveContent };
+module.exports = { isValidHttpsVideoUrl, resolveContent, resolveWebPoster };

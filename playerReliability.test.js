@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { isValidHttpsVideoUrl, resolveContent } = require('./playerReliability');
+const { isValidHttpsVideoUrl, resolveContent, resolveWebPoster } = require('./playerReliability');
 
 test('accepts only non-empty HTTPS video URLs', () => {
   assert.equal(isValidHttpsVideoUrl('https://cdn.example.com/movie.mp4'), true);
@@ -23,4 +23,11 @@ test('uses a valid backend HTTPS URL', () => {
     [{ title: 'Film', videoUrl: ' https://api.example.com/film.mp4 ' }],
   );
   assert.equal(resolved.videoUrl, 'https://api.example.com/film.mp4');
+});
+
+test('resolves only web-safe poster sources', () => {
+  assert.equal(resolveWebPoster(' /poster.png '), '/poster.png');
+  assert.equal(resolveWebPoster({ uri: 'https://cdn.example.com/poster.png' }), 'https://cdn.example.com/poster.png');
+  assert.equal(resolveWebPoster(42), null);
+  assert.equal(resolveWebPoster(null), null);
 });
