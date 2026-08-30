@@ -1,4 +1,3 @@
-const DEV_FALLBACK = 'http://localhost:3000';
 const BUILD_API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BUILD_NODE_ENV = process.env.NODE_ENV;
 
@@ -15,8 +14,7 @@ function getApiBaseUrl(env) {
     if (source.NODE_ENV === 'production' && parsed.protocol !== 'https:') throw new Error('EXPO_PUBLIC_API_URL must use HTTPS in production.');
     return configured;
   }
-  if (source.NODE_ENV === 'production') throw new Error('EXPO_PUBLIC_API_URL is required for a production build.');
-  return DEV_FALLBACK;
+  throw new Error('EXPO_PUBLIC_API_URL is required. Copy .env.example for local development.');
 }
 
-module.exports = { DEV_FALLBACK, getApiBaseUrl };
+module.exports = { getApiBaseUrl };

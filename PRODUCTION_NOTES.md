@@ -14,7 +14,7 @@ If Render currently returns a storage error page, the backend must refresh the s
 
 ## Required production configuration
 
-Set `EXPO_PUBLIC_API_URL` to the HTTPS backend origin in the production build environment. The build intentionally fails when it is absent or insecure. Localhost is used only as a clearly defined development fallback.
+Set `EXPO_PUBLIC_API_URL` to the HTTPS backend origin in every build environment. The build intentionally fails when it is absent, and production builds fail when it is insecure. The frontend contains no localhost fallback.
 
 The Render frontend service must define:
 
@@ -32,6 +32,10 @@ Public home, browse, details, taxonomy, search, and playback metadata may be rea
 The consumer expects backend-provided profile maturity eligibility to be enforced on every catalogue, search, recommendation, details, and playback endpoint. Frontend kids filtering is defence in depth, not the authority.
 
 Render cold starts are treated as a waking state for the first 45 seconds. Operators should keep `/health` inexpensive and return normalized JSON error responses for processing, region, and maturity restrictions.
+
+## Web routing
+
+The viewer uses History API paths. Configure the Render static-site rewrite `/*` to `/index.html` with status `200`, so direct links and refreshes are served by Expo's generated entry document rather than returning a platform 404.
 
 ## Backend capabilities and rollout
 

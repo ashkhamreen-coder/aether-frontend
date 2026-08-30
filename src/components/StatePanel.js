@@ -1,0 +1,5 @@
+import React from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { tokens } from '../theme/tokens';
+export function StatePanel({title,message,action,onAction,busy=false}) { return <View accessibilityLiveRegion="polite" style={s.wrap}>{busy?<ActivityIndicator color={tokens.color.accentSoft}/>:null}<Text accessibilityRole="header" style={s.title}>{title}</Text><Text style={s.message}>{message}</Text>{action?<Pressable accessibilityRole="button" onPress={onAction} style={s.button}><Text style={s.buttonText}>{action}</Text></Pressable>:null}</View>; }
+const s=StyleSheet.create({wrap:{minHeight:300,alignItems:'center',justifyContent:'center',padding:24,gap:12},title:{color:tokens.color.text,fontSize:24,fontWeight:'800',textAlign:'center'},message:{color:tokens.color.muted,fontSize:15,lineHeight:22,textAlign:'center',maxWidth:520},button:{minHeight:44,paddingHorizontal:22,borderRadius:999,backgroundColor:tokens.color.text,justifyContent:'center'},buttonText:{color:'#08080d',fontWeight:'800'}});
