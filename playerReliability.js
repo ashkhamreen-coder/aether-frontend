@@ -34,4 +34,24 @@ function resolveContent(localItem, backendItems) {
   return resolved;
 }
 
-module.exports = { isValidHttpsVideoUrl, resolveContent, resolveWebPoster };
+function isPlayableMediaType(value) {
+  const type = String(value || '').toLowerCase().split(';')[0].trim();
+  return type.startsWith('video/') || ['application/vnd.apple.mpegurl', 'application/x-mpegurl'].includes(type);
+}
+
+async function inspectVideoUrl(url, fetchImpl = globalThis.fetch, signal) {
+  if (!isValidHttpsVideoUrl(url)) return { playable: false, reason: 'A secure media URL was not provided.' };
+  try {
+    const response = await fetchImpl(url.trim(), { method: 'GET', headers: { Range: 'bytes=0-1' }, signal });
+    const contentType = response.headers?.get?.('content-type') || '';
+    if (!response.ok || !isPlayableMediaType(contentType)) {
+      return { playable: false, status: response.status, contentType, reason: `The media host returned ${response.status || 'an invalid response'}${contentType ? ` (${contentType})` : ''}.` };
+    }
+    response.body?.cancel?.();
+    return { playable: true, contentType };
+  } catch (error) {
+    return { playable: false, reason: error.name === 'AbortError' ? 'Media validation was cancelled.' : 'The media host could not be reached.' };
+  }
+}
+
+module.exports = { inspectVideoUrl, isPlayableMediaType, isValidHttpsVideoUrl, resolveContent, resolveWebPoster };

@@ -31,3 +31,17 @@ test('resolves only web-safe poster sources', () => {
   assert.equal(resolveWebPoster(42), null);
   assert.equal(resolveWebPoster(null), null);
 });
+
+test('recognises browser media MIME types', () => {
+  const { isPlayableMediaType } = require('./playerReliability');
+  assert.equal(isPlayableMediaType('video/mp4; charset=binary'), true);
+  assert.equal(isPlayableMediaType('application/vnd.apple.mpegurl'), true);
+  assert.equal(isPlayableMediaType('text/html'), false);
+});
+
+test('rejects an HTML response before playback', async () => {
+  const { inspectVideoUrl } = require('./playerReliability');
+  const result = await inspectVideoUrl('https://cdn.example.com/video.mp4', async () => ({ ok: true, status: 200, headers: { get: () => 'text/html' } }));
+  assert.equal(result.playable, false);
+  assert.equal(result.contentType, 'text/html');
+});

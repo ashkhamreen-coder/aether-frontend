@@ -5,11 +5,16 @@
     "version": "2.0.0",
     "orientation": "default",
     "userInterfaceStyle": "dark",
-    "assetBundlePatterns": ["assets/**/*"],
+    "assetBundlePatterns": [
+      "assets/**/*"
+    ],
     "web": {
       "bundler": "metro",
       "output": "single",
-      "name": "Ripple — AI Originals"
+      "name": "Ripple \u2014 AI Originals",
+      "description": "Discover mythology-inspired films, music and visual worlds created by the next generation of AI storytellers.",
+      "themeColor": "#060914",
+      "backgroundColor": "#060914"
     }
   }
 }
