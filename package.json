@@ -1,7 +1,7 @@
 {
   "name": "aether-frontend",
   "version": "2.0.0",
-  "description": "AETHER — the streaming and creation platform for original AI entertainment.",
+  "description": "Ripple — the streaming and creation platform for original AI entertainment.",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {

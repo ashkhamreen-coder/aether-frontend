@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "AETHER",
+    "name": "Ripple",
     "slug": "aether-ai-creators",
     "version": "2.0.0",
     "orientation": "default",
@@ -9,7 +9,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "name": "AETHER — AI Originals"
+      "name": "Ripple — AI Originals"
     }
   }
 }
