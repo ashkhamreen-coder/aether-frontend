@@ -9,10 +9,15 @@ class ApiError extends Error {
 }
 
 function createApiClient({ baseUrl, getToken, onUnauthorized, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
-  const base = String(baseUrl || '').trim().replace(/\/$/, '');
+  const base = String(baseUrl || '').trim().replace(/\/+$/, '');
+  const pending = new Map();
   async function request(path, options = {}) {
     if (!base) throw new ApiError('Ripple is not connected. Set EXPO_PUBLIC_API_URL and rebuild the app.', { code: 'NOT_CONFIGURED' });
     const method = String(options.method || 'GET').toUpperCase();
+    const normalizedPath = `/${String(path).replace(/^\/+/, '')}`;
+    const dedupeKey = method === 'GET' && !options.signal ? normalizedPath : null;
+    if (dedupeKey && pending.has(dedupeKey)) return pending.get(dedupeKey);
+    const run = async () => {
     const retries = method === 'GET' ? (options.retries ?? 2) : 0;
     let lastError;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -22,7 +27,7 @@ function createApiClient({ baseUrl, getToken, onUnauthorized, fetchImpl = global
       options.signal?.addEventListener('abort', abort, { once: true });
       try {
         const token = await getToken?.();
-        const response = await fetchImpl(`${base}${path}`, {
+        const response = await fetchImpl(`${base}${normalizedPath}`, {
           ...options,
           signal: controller.signal,
           headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
@@ -42,6 +47,10 @@ function createApiClient({ baseUrl, getToken, onUnauthorized, fetchImpl = global
       }
     }
     throw lastError;
+    };
+    const promise = run();
+    if (dedupeKey) pending.set(dedupeKey, promise);
+    try { return await promise; } finally { if (dedupeKey && pending.get(dedupeKey) === promise) pending.delete(dedupeKey); }
   }
   return { request };
 }
