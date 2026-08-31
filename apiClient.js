@@ -18,7 +18,7 @@ function createApiClient({ baseUrl, getToken, refreshToken, onUnauthorized, fetc
     const dedupeKey = method === 'GET' && !options.signal && !options._refreshed ? normalizedPath : null;
     if (dedupeKey && pending.has(dedupeKey)) return pending.get(dedupeKey);
     const run = async () => {
-    const retries = method === 'GET' ? (options.retries ?? 2) : 0;
+    const retries = method === 'GET' ? (options.retries ?? 1) : 0;
     let lastError;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       const controller = new AbortController();
