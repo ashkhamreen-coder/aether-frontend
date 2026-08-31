@@ -30,7 +30,7 @@ export function AppShell() {
   const [detailState, setDetailState] = useState({ loading: false, error: '' });
   const [player, setPlayer] = useState(null);
   const [saved, setSaved] = useState(new Set());
-  const [state, setState] = useState({ loading: true, error: '', service: 'ready', rows: [], catalogue: [], hero: null });
+  const [state, setState] = useState({ loading: true, error: '', service: 'ready', rows: [], catalogue: [], technical: [], hero: null });
   const navigate = useCallback(next => go(next, setPath), []);
 
   useEffect(() => { if (typeof window === 'undefined') return; const pop = () => setPath(currentPath()); window.addEventListener('popstate', pop); return () => window.removeEventListener('popstate', pop); }, []);
@@ -43,9 +43,11 @@ export function AppShell() {
       if (homeResult.status === 'rejected' && contentResult.status === 'rejected') throw homeResult.reason;
       const home = homeResult.status === 'fulfilled' ? homeResult.value : {};
       const rows = normalizeRows(home);
-      const catalogue = contentResult.status === 'fulfilled' ? arrayFrom(contentResult.value, 'content').filter(item => !isTechnicalTest(item)) : [];
+      const allContent = contentResult.status === 'fulfilled' ? arrayFrom(contentResult.value, 'content') : [];
+      const catalogue = allContent.filter(item => !isTechnicalTest(item));
+      const technical = allContent.filter(isTechnicalTest);
       const featured = arrayFrom(home, 'featured').concat(rows.flatMap(row => row.items)).filter(item => item && !isTechnicalTest(item));
-      setState({ loading: false, error: '', service: 'ready', rows, catalogue, hero: featured.find(item => item.featured) || featured[0] || null });
+      setState({ loading: false, error: '', service: 'ready', rows, catalogue, technical, hero: featured.find(item => item.featured) || featured[0] || null });
     } catch (error) {
       setState(previous => ({ ...previous, loading: false, error: error.message || 'Ripple could not reach the service.', service: serviceState(error, Date.now() - began, typeof navigator === 'undefined' || navigator.onLine) }));
     }
@@ -61,7 +63,7 @@ export function AppShell() {
   }, []);
 
   useEffect(() => { const id = titleIdFromPath(path); if (id) loadDetails(id); else setDetails(null); }, [path, loadDetails]);
-  const open = useCallback(item => { const id = idOf(item); if (id) navigate(`/title/${encodeURIComponent(id)}`); }, [navigate]);
+  const open = useCallback(item => { if (item?.isEditorialPreview) { setDetails(item); return; } const id = idOf(item); if (id) navigate(`/title/${encodeURIComponent(id)}`); }, [navigate]);
   const closeDetails = useCallback(() => navigate('/'), [navigate]);
 
   const play = useCallback(async item => {
