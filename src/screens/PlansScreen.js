@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } fr
 import { api } from '../services/api';
 import { tokens } from '../theme/tokens';
 
-export const BILLING_UNAVAILABLE = 'Subscriptions are not available yet. You can continue with the Free plan.';
+export const BILLING_UNAVAILABLE = 'Subscriptions are not available yet. Continue watching with the Free plan.';
 const list = value => Array.isArray(value) ? value : value?.plans || value?.data || [];
 const feature = (plan, key, fallback='—') => plan?.features?.[key] ?? plan?.[key] ?? fallback;
 export function normalizePlans(value) { return list(value).filter(Boolean); }
