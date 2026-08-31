@@ -43,7 +43,7 @@ export function AppShell() {
       if (homeResult.status === 'rejected' && contentResult.status === 'rejected') throw homeResult.reason;
       const home = homeResult.status === 'fulfilled' ? homeResult.value : {};
       const rows = normalizeRows(home);
-      const allContent = contentResult.status === 'fulfilled' ? arrayFrom(contentResult.value, 'content') : [];
+      const allContent = (contentResult.status === 'fulfilled' ? arrayFrom(contentResult.value, 'content') : []).filter(item => item && idOf(item));
       const catalogue = allContent.filter(item => !isTechnicalTest(item));
       const technical = allContent.filter(isTechnicalTest);
       const featured = arrayFrom(home, 'featured').concat(rows.flatMap(row => row.items)).filter(item => item && !isTechnicalTest(item));
