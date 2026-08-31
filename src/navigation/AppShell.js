@@ -14,19 +14,91 @@ import { StatePanel } from '../components/StatePanel';
 import { api } from '../services/api';
 import { getAccessToken } from '../services/session';
 import { arrayFrom, idOf, isTechnicalTest, normalizeRows } from '../utils/content';
-import { serviceState } from '../../consumerCore';
+import { serviceState, progressPayload } from '../../consumerCore';
 import { playbackDecision } from '../../playerReliability';
 import { currentPath, KNOWN_ROUTES, navigate as go } from './router';
 import { tokens } from '../theme/tokens';
-import { editorialRows, editorialTitles, routeEditorial } from '../data/editorial';
 
-export function AppShell(){const {width}=useWindowDimensions(),compact=width<1024;const[path,setPath]=useState(currentPath),[user,setUser]=useState(null),[details,setDetails]=useState(null),[player,setPlayer]=useState(null),[saved,setSaved]=useState(new Set()),[state,setState]=useState({loading:true,error:'',service:'ready',rows:[],technical:[],catalogue:[],hero:editorialTitles[0]});const navigate=useCallback(p=>go(p,setPath),[]);
- useEffect(()=>{if(typeof window==='undefined')return;const pop=()=>setPath(currentPath());window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop)},[]);
- const load=useCallback(async()=>{const began=Date.now();setState(s=>({...s,loading:true,error:''}));try{const [homeResult,contentResult]=await Promise.allSettled([api('/api/home'),api('/api/content')]);if(homeResult.status==='rejected'&&contentResult.status==='rejected')throw homeResult.reason;const home=homeResult.status==='fulfilled'?homeResult.value:{};const rows=normalizeRows(home);const catalogue=contentResult.status==='fulfilled'?arrayFrom(contentResult.value,'content'):[];const technical=catalogue.filter(isTechnicalTest);const heroCandidates=[...arrayFrom(home,'featured'),...rows.flatMap(r=>r.items)].filter(x=>!isTechnicalTest(x)&&(x.backdropUrl||x.heroImageUrl||x.imageUrl||x.posterUrl));setState({loading:false,error:'',service:'ready',rows,technical,catalogue,hero:heroCandidates.find(x=>x.featured)||heroCandidates[0]||editorialTitles[0]});}catch(e){setState(s=>({...s,loading:false,error:e.message||'Ripple could not reach the service.',service:serviceState(e,Date.now()-began,typeof navigator==='undefined'||navigator.onLine)}));}},[]);
- useEffect(()=>{load();getAccessToken().then(token=>token&&api('/api/me').then(x=>setUser(x.user||x)).catch(()=>{}))},[load]);
- const open=useCallback(async item=>{setDetails(item);const id=idOf(item);if(id)try{const full=await api(`/api/content/${encodeURIComponent(id)}`);setDetails(full.content||full.data||full)}catch{}},[]);
- const play=useCallback(async item=>{const id=idOf(item);if(!id)return;setDetails(null);try{const data=await api(`/api/content/${encodeURIComponent(id)}/playback`);const payload=data.playback||data.data||data;const decision=playbackDecision(payload);if(decision.kind==='ready')setPlayer({...item,...payload,...decision.playback});else setDetails({...item,...payload,mediaStatus:payload.mediaStatus||decision.kind});}catch(e){setDetails({...item,synopsis:e.message,mediaStatus:e.code==='MEDIA_PROCESSING'?'processing':'unavailable'})}},[]);
- const toggleList=useCallback(item=>{const id=idOf(item);if(!id)return;setSaved(old=>{const next=new Set(old);next.has(id)?next.delete(id):next.add(id);return next});if(user)api(`/api/content/${encodeURIComponent(id)}/my-list`,{method:saved.has(id)?'DELETE':'POST'}).catch(()=>{});},[user,saved]);
- const catalogue=useMemo(()=>state.catalogue.filter(x=>!isTechnicalTest(x)),[state.catalogue]);let screen;if(path==='/')screen=<HomeScreen state={state} editorialRows={editorialRows} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved}/>;else if(path==='/search')screen=<SearchScreen onOpen={open}/>;else if(path==='/signin'||path==='/signup')screen=<AuthScreen mode={path==='/signup'?'signup':'signin'} navigate={navigate} onComplete={u=>{setUser(u);navigate('/profiles')}}/>;else if(path==='/forgot-password'||path==='/reset-password')screen=<PasswordScreen reset={path==='/reset-password'} navigate={navigate}/>;else if(['/account','/profiles','/profiles/new','/onboarding'].includes(path))screen=<ProfileScreen route={path} user={user} navigate={navigate} onLogout={()=>setUser(null)} onRefresh={load}/>;else if(['/films','/series','/shorts'].includes(path)){const key=path.slice(1),type=key.replace(/s$/,'');const live=catalogue.filter(x=>String(x.type||x.contentType).toLowerCase().includes(type));const liveRows=state.rows.filter(r=>String(r.title).toLowerCase().includes(type));screen=<CatalogueScreen title={key.slice(0,1).toUpperCase()+key.slice(1)} loading={state.loading} items={live} fallback={editorialTitles.filter(x=>x.type===type)} rows={liveRows.length?liveRows:routeEditorial[key]} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved}/>;}else if(path==='/my-list')screen=<CatalogueScreen title="My List" items={catalogue.filter(x=>saved.has(idOf(x)))} onOpen={open} empty={user?'Titles you save will appear here.':'Sign in to save titles across your devices.'}/>;else if(path==='/new'){const liveRows=state.rows.filter(r=>/top 10|trending|new releases|recently added|popular|coming soon/i.test(r.title));const fallbackRows=[{id:'new-today',title:'Trending Today',reason:'Insufficient viewing data • Editorial previews instead',items:editorialTitles.slice(0,4)},{id:'new-week',title:'Trending This Week',reason:'Insufficient viewing data • No fabricated rankings',items:editorialTitles.slice(2,6)},{id:'new-releases',title:'New Releases',reason:'Editorial previews • Coming Soon',items:editorialTitles.slice(1,7)},{id:'new-global',title:'Popular Globally and by Country',reason:'This rail will activate when backend aggregates are sufficient',items:editorialTitles.slice(4)},{id:'new-coming',title:'Coming Soon',reason:'Ripple editorial concepts',items:editorialTitles}];screen=<CatalogueScreen title="New & Popular" loading={state.loading} fallback={editorialTitles} rows={liveRows.length?liveRows:fallbackRows} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} empty="Not enough viewing data yet."/>;}else if(!KNOWN_ROUTES.has(path))screen=<StatePanel title="Page not found" message="That Ripple destination does not exist." action="Go home" onAction={()=>navigate('/')}/>;else screen=<StatePanel title="Experience unavailable" message="Ripple will enable this screen when the backend capability is available." action="Go home" onAction={()=>navigate('/')}/>;
- return <SafeAreaView style={s.safe}><Header overlay={path==='/'} path={path} navigate={navigate} compact={compact} onSignIn={()=>navigate(user?'/account':'/signin')}/><View style={s.body}>{screen}</View>{compact?<MobileNavigation path={path} navigate={navigate}/>:null}<ContentDetails item={details} onClose={()=>setDetails(null)} onPlay={play} onToggleList={toggleList} saved={details&&saved.has(idOf(details))}/><VideoPlayer item={player} onClose={()=>setPlayer(null)} onProgress={(position,duration,event)=>{const id=idOf(player);if(user&&id)api(`/api/content/${encodeURIComponent(id)}/progress`,{method:'PUT',body:JSON.stringify({positionSeconds:position,durationSeconds:duration,event})}).catch(()=>{})}}/></SafeAreaView>}
-const s=StyleSheet.create({safe:{flex:1,backgroundColor:tokens.color.background},body:{flex:1,minWidth:0}});
+const titleIdFromPath = path => path.startsWith('/title/') ? decodeURIComponent(path.slice(7)) : '';
+
+export function AppShell() {
+  const { width } = useWindowDimensions();
+  const compact = width < 1024;
+  const [path, setPath] = useState(currentPath);
+  const [user, setUser] = useState(null);
+  const [details, setDetails] = useState(null);
+  const [detailState, setDetailState] = useState({ loading: false, error: '' });
+  const [player, setPlayer] = useState(null);
+  const [saved, setSaved] = useState(new Set());
+  const [state, setState] = useState({ loading: true, error: '', service: 'ready', rows: [], catalogue: [], hero: null });
+  const navigate = useCallback(next => go(next, setPath), []);
+
+  useEffect(() => { if (typeof window === 'undefined') return; const pop = () => setPath(currentPath()); window.addEventListener('popstate', pop); return () => window.removeEventListener('popstate', pop); }, []);
+
+  const load = useCallback(async () => {
+    const began = Date.now();
+    setState(previous => ({ ...previous, loading: true, error: '' }));
+    try {
+      const [homeResult, contentResult] = await Promise.allSettled([api('/api/home'), api('/api/content')]);
+      if (homeResult.status === 'rejected' && contentResult.status === 'rejected') throw homeResult.reason;
+      const home = homeResult.status === 'fulfilled' ? homeResult.value : {};
+      const rows = normalizeRows(home);
+      const catalogue = contentResult.status === 'fulfilled' ? arrayFrom(contentResult.value, 'content').filter(item => !isTechnicalTest(item)) : [];
+      const featured = arrayFrom(home, 'featured').concat(rows.flatMap(row => row.items)).filter(item => item && !isTechnicalTest(item));
+      setState({ loading: false, error: '', service: 'ready', rows, catalogue, hero: featured.find(item => item.featured) || featured[0] || null });
+    } catch (error) {
+      setState(previous => ({ ...previous, loading: false, error: error.message || 'Ripple could not reach the service.', service: serviceState(error, Date.now() - began, typeof navigator === 'undefined' || navigator.onLine) }));
+    }
+  }, []);
+
+  useEffect(() => { load(); getAccessToken().then(token => token && api('/api/me').then(value => setUser(value.user || value)).catch(() => {})); }, [load]);
+
+  const loadDetails = useCallback(async id => {
+    if (!id) return;
+    setDetailState({ loading: true, error: '' });
+    try { const value = await api(`/api/content/${encodeURIComponent(id)}`); setDetails(value.content || value.data || value); setDetailState({ loading: false, error: '' }); }
+    catch (error) { setDetails(null); setDetailState({ loading: false, error: error.message || 'Title details are unavailable.' }); }
+  }, []);
+
+  useEffect(() => { const id = titleIdFromPath(path); if (id) loadDetails(id); else setDetails(null); }, [path, loadDetails]);
+  const open = useCallback(item => { const id = idOf(item); if (id) navigate(`/title/${encodeURIComponent(id)}`); }, [navigate]);
+  const closeDetails = useCallback(() => navigate('/'), [navigate]);
+
+  const play = useCallback(async item => {
+    const id = idOf(item); if (!id) return;
+    try {
+      const data = await api(`/api/content/${encodeURIComponent(id)}/playback`);
+      const payload = data.playback || data.data || data;
+      const decision = playbackDecision(payload);
+      if (decision.kind === 'ready') { setDetails(null); setPlayer({ ...item, ...payload, ...decision.playback }); }
+      else setDetails({ ...item, ...payload, mediaStatus: payload.mediaStatus || decision.kind });
+    } catch (error) { setDetails({ ...item, playbackError: error.message, mediaStatus: error.code === 'MEDIA_PROCESSING' ? 'processing' : 'unavailable' }); }
+  }, []);
+
+  const toggleList = useCallback(item => {
+    if (!user) return;
+    const id = idOf(item); if (!id) return;
+    const removing = saved.has(id);
+    api(`/api/content/${encodeURIComponent(id)}/my-list`, { method: removing ? 'DELETE' : 'POST' }).then(() => setSaved(old => { const next = new Set(old); removing ? next.delete(id) : next.add(id); return next; })).catch(() => {});
+  }, [user, saved]);
+
+  const catalogue = useMemo(() => state.catalogue.filter(item => !isTechnicalTest(item)), [state.catalogue]);
+  let screen;
+  if (path === '/') screen = <HomeScreen state={state} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} canSave={Boolean(user)}/>;
+  else if (path === '/search') screen = <SearchScreen onOpen={open}/>;
+  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} navigate={navigate} onComplete={value => { setUser(value); navigate('/profiles'); }}/>;
+  else if (path === '/forgot-password' || path === '/reset-password') screen = <PasswordScreen reset={path === '/reset-password'} navigate={navigate}/>;
+  else if (['/account', '/profiles', '/profiles/new', '/onboarding'].includes(path)) screen = <ProfileScreen route={path} user={user} navigate={navigate} onLogout={() => setUser(null)} onRefresh={load}/>;
+  else if (['/films', '/series', '/shorts'].includes(path)) {
+    const key = path.slice(1), type = key.replace(/s$/, '');
+    const items = catalogue.filter(item => String(item.type || item.contentType).toLowerCase().includes(type));
+    const rows = state.rows.filter(row => String(row.title || '').toLowerCase().includes(type));
+    screen = <CatalogueScreen title={key[0].toUpperCase() + key.slice(1)} loading={state.loading} items={items} rows={rows} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={saved}/>;
+  } else if (path === '/my-list') screen = <CatalogueScreen title="My List" items={catalogue.filter(item => saved.has(idOf(item)))} onOpen={open} empty={user ? 'Titles you save will appear here.' : 'Sign in to use My List.'}/>;
+  else if (titleIdFromPath(path)) screen = detailState.loading ? <StatePanel busy title="Loading title" message="Fetching title details from Ripple."/> : detailState.error ? <StatePanel title="Title couldn’t load" message={detailState.error} action="Try again" onAction={() => loadDetails(titleIdFromPath(path))}/> : <View/>;
+  else if (!KNOWN_ROUTES.has(path)) screen = <StatePanel title="Page not found" message="That Ripple destination does not exist." action="Go home" onAction={() => navigate('/')}/>;
+  else screen = <StatePanel title="Experience unavailable" message="Ripple will enable this screen when the backend capability is available." action="Go home" onAction={() => navigate('/')}/>;
+
+  return <SafeAreaView style={styles.safe}><Header overlay={path === '/'} path={path} navigate={navigate} compact={compact} onSignIn={() => navigate(user ? '/account' : '/signin')}/><View style={styles.body}>{screen}</View>{compact ? <MobileNavigation path={path} navigate={navigate}/> : null}<ContentDetails item={details} onClose={closeDetails} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
+}
+const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: tokens.color.background }, body: { flex: 1, minWidth: 0 } });
