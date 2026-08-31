@@ -3,6 +3,8 @@ const art = {
   lanka: require('../../assets/trend_sands.png'), garuda: require('../../assets/film_signal.png'),
   kali: require('../../assets/film_neon.png'), amrita: require('../../assets/art_chromatic.png'),
   shakti: require('../../assets/short_afterlight.png'), mayavi: require('../../assets/music_midnight.png'),
+  anima: require('../../assets/art_eternal.png'), raga: require('../../assets/music_copper.png'),
+  signal: require('../../assets/trend_electric.png'), echo: require('../../assets/film_echoes.png'),
 };
 
 const preview = (id,title,image,genre,synopsis,type='film') => ({
@@ -21,13 +23,22 @@ export const editorialTitles = [
   preview('amrita','Amrita Protocol',art.amrita,'Science Fiction','In a distant future, an AI discovers an ancient formula for digital immortality.'),
   preview('shakti','Shakti: Nine Nights',art.shakti,'Short Films','Nine manifestations of strength guide a fractured kingdom through transformation.','short'),
   preview('mayavi','Mayavi',art.mayavi,'AI Music Videos','An illusion architect becomes trapped inside a dream of his own creation.','short'),
+  preview('anima','Anima: The First Breath',art.anima,'Animation','A hand-drawn universe searches for the artist who dreamed it into being.','animation'),
+  preview('raga','Raga at Dusk',art.raga,'Music and Mantras','An original visual meditation where ancient rhythm meets an imagined horizon.','music'),
+  preview('signal','The Monsoon Signal',art.signal,'Series','A radio operator hears tomorrow’s weather—and a warning meant only for her.','series'),
+  preview('echo','Echoes of Nila',art.echo,'Drama','A sound archivist follows a lost melody through a city that is slowly forgetting.','film'),
 ];
 
 export const editorialRows = [
-  {id:'editorial-mythology',title:'Mythology and Epics',reason:'Editorial previews • Coming Soon',items:editorialTitles.slice(0,4)},
-  {id:'editorial-ai-cinema',title:'AI Cinema',reason:'Editorial previews • Coming Soon',items:[editorialTitles[4],editorialTitles[5]]},
-  {id:'editorial-shorts',title:'Shorts',reason:'Editorial previews • Coming Soon',items:[editorialTitles[6],editorialTitles[7]]},
-  {id:'editorial-coming',title:'Coming Soon',reason:'Ripple editorial concepts • Media not yet available',items:editorialTitles.slice(2,7)},
+  {id:'editorial-featured',title:'Featured',reason:'A first look at worlds being shaped at Ripple',items:[editorialTitles[0],editorialTitles[4],editorialTitles[10],editorialTitles[11]]},
+  {id:'editorial-mythology',title:'Mythology & Epics',reason:'Original editorial concepts • Coming Soon',items:editorialTitles.slice(0,4)},
+  {id:'editorial-ai-cinema',title:'AI Cinema',reason:'Imagination, amplified',items:[editorialTitles[4],editorialTitles[5],editorialTitles[7],editorialTitles[11]]},
+  {id:'editorial-series',title:'Series',portrait:true,reason:'Stories built to unfold',items:[editorialTitles[1],editorialTitles[3],editorialTitles[10]]},
+  {id:'editorial-films',title:'Films',portrait:true,reason:'Feature-length concepts',items:[editorialTitles[0],editorialTitles[4],editorialTitles[5],editorialTitles[11]]},
+  {id:'editorial-shorts',title:'Shorts',reason:'Brief stories. Lasting worlds.',items:[editorialTitles[6],editorialTitles[7]]},
+  {id:'editorial-animation',title:'Animation',portrait:true,reason:'Frame by imagined frame',items:[editorialTitles[8],editorialTitles[5],editorialTitles[6]]},
+  {id:'editorial-music',title:'Music & Mantras',reason:'Original audiovisual concepts',items:[editorialTitles[9],editorialTitles[7]]},
+  {id:'editorial-coming',title:'Coming Soon',portrait:true,reason:'Preview the next wave of Ripple originals',items:editorialTitles.slice(2,10)},
 ];
 
 const by = predicate => editorialTitles.filter(predicate);

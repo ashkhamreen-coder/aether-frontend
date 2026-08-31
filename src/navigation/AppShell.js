@@ -25,6 +25,7 @@ export function AppShell() {
   const { width } = useWindowDimensions();
   const compact = width < 1024;
   const [path, setPath] = useState(currentPath);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [details, setDetails] = useState(null);
   const [detailState, setDetailState] = useState({ loading: false, error: '' });
@@ -86,7 +87,7 @@ export function AppShell() {
 
   const catalogue = useMemo(() => state.catalogue.filter(item => !isTechnicalTest(item)), [state.catalogue]);
   let screen;
-  if (path === '/') screen = <HomeScreen state={state} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} canSave={Boolean(user)}/>;
+  if (path === '/') screen = <HomeScreen state={state} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} canSave={Boolean(user)} onScroll={event => setHeaderScrolled(event.nativeEvent.contentOffset.y > 36)}/>;
   else if (path === '/search') screen = <SearchScreen onOpen={open}/>;
   else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} navigate={navigate} onComplete={value => { setUser(value); navigate('/profiles'); }}/>;
   else if (path === '/forgot-password' || path === '/reset-password') screen = <PasswordScreen reset={path === '/reset-password'} navigate={navigate}/>;
@@ -101,6 +102,6 @@ export function AppShell() {
   else if (!KNOWN_ROUTES.has(path)) screen = <StatePanel title="Page not found" message="That Ripple destination does not exist." action="Go home" onAction={() => navigate('/')}/>;
   else screen = <StatePanel title="Experience unavailable" message="Ripple will enable this screen when the backend capability is available." action="Go home" onAction={() => navigate('/')}/>;
 
-  return <SafeAreaView style={styles.safe}><Header overlay={path === '/'} path={path} navigate={navigate} compact={compact} onSignIn={() => navigate(user ? '/account' : '/signin')}/><View style={styles.body}>{screen}</View>{compact ? <MobileNavigation path={path} navigate={navigate}/> : null}<ContentDetails item={details} onClose={closeDetails} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
+  return <SafeAreaView style={styles.safe}><Header overlay={path === '/'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} onSignIn={() => navigate(user ? '/account' : '/signin')}/><View style={styles.body}>{screen}</View>{compact ? <MobileNavigation path={path} navigate={navigate}/> : null}<ContentDetails item={details} onClose={closeDetails} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: tokens.color.background }, body: { flex: 1, minWidth: 0 } });
