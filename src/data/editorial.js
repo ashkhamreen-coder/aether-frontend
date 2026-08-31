@@ -14,9 +14,9 @@ const preview = (id,title,image,genre,synopsis,type='film') => ({
 
 export const editorialTitles = [
   preview('astra','Astra: The Forgotten Weapon',art.astra,'Mythology and Epics','A celestial weapon awakens beneath a forgotten kingdom and chooses an unlikely guardian.'),
-  preview('samudra','Samudra: The Last Churning',art.samudra,'Mythology and Epics','Devas and asuras return to the cosmic ocean when a lost secret threatens the three worlds.'),
+  preview('samudra','Samudra: The Last Churning',art.samudra,'Mythology and Epics','Devas and asuras return to the cosmic ocean when a lost secret threatens the three worlds.','series'),
   preview('lanka','Lanka: Ashes of the Sky',art.lanka,'Regional Stories','A young chronicler discovers that history remembers only half the truth.'),
-  preview('garuda','Garuda: Keeper of Amrita',art.garuda,'Fantasy Worlds','Garuda crosses seven impossible realms to free his mother.'),
+  preview('garuda','Garuda: Keeper of Amrita',art.garuda,'Fantasy','Garuda crosses seven impossible realms to free his mother.','series'),
   preview('kali','Kali: The Final Dawn',art.kali,'AI Cinema','An ancient force awakens when darkness learns to hide inside human desire.'),
   preview('amrita','Amrita Protocol',art.amrita,'Science Fiction','In a distant future, an AI discovers an ancient formula for digital immortality.'),
   preview('shakti','Shakti: Nine Nights',art.shakti,'Short Films','Nine manifestations of strength guide a fractured kingdom through transformation.','short'),
@@ -29,3 +29,26 @@ export const editorialRows = [
   {id:'editorial-shorts',title:'Shorts',reason:'Editorial previews • Coming Soon',items:[editorialTitles[6],editorialTitles[7]]},
   {id:'editorial-coming',title:'Coming Soon',reason:'Ripple editorial concepts • Media not yet available',items:editorialTitles.slice(2,7)},
 ];
+
+const by = predicate => editorialTitles.filter(predicate);
+export const routeEditorial = {
+  films: [
+    {id:'films-popular',title:'Popular Films',reason:'Editorial previews • Rankings unavailable until sufficient viewing data exists',items:by(x=>x.type==='film').slice(0,4)},
+    {id:'films-new',title:'New Films',reason:'Editorial previews • Coming Soon',items:by(x=>x.type==='film').slice(2)},
+    {id:'films-language',title:'Films by Language',reason:'Hindi • Editorial previews • Coming Soon',items:by(x=>x.type==='film')},
+    {id:'films-genre',title:'Films by Genre',reason:'Mythology, science fiction and regional stories • Editorial previews',items:by(x=>x.type==='film')},
+    {id:'films-coming',title:'Coming Soon',reason:'Ripple editorial concepts • Media not yet available',items:by(x=>x.type==='film')},
+  ],
+  series: [
+    {id:'series-trending',title:'Trending Series',reason:'Editorial previews • No fabricated ranking',items:by(x=>x.type==='series')},
+    {id:'series-new',title:'New Episodes',reason:'Editorial previews • Episodes coming soon',items:by(x=>x.type==='series')},
+    {id:'series-genres',title:'Series by Genre',reason:'Mythology and fantasy • Editorial previews',items:by(x=>x.type==='series')},
+    {id:'series-seasons',title:'Seasons and Episodes',reason:'Episode guides will appear when published',items:by(x=>x.type==='series')},
+    {id:'series-coming',title:'Coming Soon',reason:'Ripple editorial concepts • Media not yet available',items:by(x=>x.type==='series')},
+  ],
+  shorts: [
+    {id:'shorts-new',title:'New Shorts',reason:'Editorial previews • Coming Soon',items:by(x=>x.type==='short')},
+    {id:'shorts-popular',title:'Popular Shorts',reason:'Popularity will appear when backend aggregates are sufficient',items:by(x=>x.type==='short')},
+    {id:'shorts-genres',title:'Shorts by Genre',reason:'Short films and AI music videos • Editorial previews',items:by(x=>x.type==='short')},
+  ],
+};
