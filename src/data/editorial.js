@@ -6,7 +6,7 @@ const artwork = (hero, landscape, portrait) => ({
   portraitImageUrl: `${CLOUDINARY_ROOT}/${portrait}`,
 });
 
-const concept = ({ id, title, synopsis, format = 'Film', genre, language = 'Hindi', hero, landscape, portrait }) => ({
+const concept = ({ id, title, synopsis, format = 'Film', genre, language = 'Hindi', hero, landscape, portrait, focal = {} }) => ({
   id: `editorial-${id}`,
   title,
   synopsis,
@@ -28,12 +28,15 @@ const concept = ({ id, title, synopsis, format = 'Film', genre, language = 'Hind
   isPlayable: false,
   mediaStatus: 'coming-soon',
   creatorName: 'Ripple Editorial',
+  imagePositionDesktop: focal.desktop || 'center center',
+  imagePositionTablet: focal.tablet || focal.desktop || 'center center',
+  imagePositionMobile: focal.mobile || focal.tablet || focal.desktop || 'center center',
 });
 
 /** The single source of truth for every Ripple editorial concept and artwork URL. */
 export const editorialTitles = [
-  concept({ id:'astra', title:'Astra: The Forgotten Weapon', genre:'Mythology & Epics', hero:'v1788175321/IMG_1053.png', landscape:'v1788175319/IMG_1058.png', portrait:'v1788175323/IMG_1071.png', synopsis:'A celestial weapon awakens beneath a forgotten kingdom and chooses an unlikely guardian.' }),
-  concept({ id:'kali', title:'Kali: The Final Dawn', genre:'AI Cinema', hero:'v1788175320/IMG_1054.png', landscape:'v1788175319/IMG_1059.png', portrait:'v1788175315/IMG_1082.png', synopsis:'An ancient force awakens when darkness learns to hide inside human desire.' }),
+  concept({ id:'astra', title:'Astra: The Forgotten Weapon', genre:'Mythology & Epics', hero:'v1788175321/IMG_1053.png', landscape:'v1788175319/IMG_1058.png', portrait:'v1788175323/IMG_1071.png', focal:{desktop:'center center',tablet:'58% center',mobile:'66% center'}, synopsis:'A celestial weapon awakens beneath a forgotten kingdom and chooses an unlikely guardian.' }),
+  concept({ id:'kali', title:'Kali: The Final Dawn', genre:'AI Cinema', hero:'v1788175320/IMG_1054.png', landscape:'v1788175319/IMG_1059.png', portrait:'v1788175315/IMG_1082.png', focal:{desktop:'center center',tablet:'60% center',mobile:'68% center'}, synopsis:'An ancient force awakens when darkness learns to hide inside human desire.' }),
   concept({ id:'signal', title:'The Monsoon Signal', format:'Series', genre:'Mystery', hero:'v1788175325/IMG_1057.png', landscape:'v1788175318/IMG_1060.png', portrait:'v1788175318/IMG_1075.png', synopsis:'A radio operator hears tomorrow’s weather—and a warning meant only for her.' }),
   concept({ id:'echo', title:'Echoes of Nila', genre:'Drama', hero:'v1788175320/IMG_1055.png', landscape:'v1788175318/IMG_1061.png', portrait:'v1788175324/IMG_1073.png', synopsis:'A sound archivist follows a lost melody through a city that is slowly forgetting.' }),
   concept({ id:'samudra', title:'Samudra: The Last Churning', format:'Series', genre:'Mythology & Epics', hero:'v1788175324/IMG_1056.png', landscape:'v1788175317/IMG_1063.png', portrait:'v1788175319/IMG_1074.png', synopsis:'Devas and asuras return to the cosmic ocean when a lost secret threatens the three worlds.' }),
