@@ -22,11 +22,11 @@ export function HomeScreen({ state, retry, onOpen, onPlay, onToggleList, saved, 
         : showEditorial
           ? null
           : null}
-    <View style={[s.rails,width<768&&s.mobileRails]}>
+    <View style={[s.rails,width<600&&s.mobileRails]}>
       {live.map(row => <ContentRail key={row.id} row={row} onOpen={onOpen}/>)}
       {concepts.map(row => <ContentRail key={row.id} row={row} onOpen={onOpen}/>)}
     </View>
-    {technical.length ? <ContentRail technical row={{ id:'technical-playback-test', title:'Technical Playback Test', reason:'Playback infrastructure validation • Separate from the Ripple catalogue', items:technical }} onOpen={onOpen}/> : null}
+    {technical.length ? <ContentRail technical row={{ id:'technical-playback-test', title:'Technical Playback Test', items:technical }} onOpen={onOpen}/> : null}
   </ScrollView>;
 }
 

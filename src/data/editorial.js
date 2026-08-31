@@ -53,15 +53,14 @@ export const editorialHeroes = editorialTitles.filter(item => item.heroImageUrl)
 const pick = (...ids) => ids.map(id => editorialTitles.find(item => item.id === `editorial-${id}`)).filter(Boolean);
 
 export const editorialRows = [
-  {id:'editorial-featured',title:'Featured',reason:'A first look at worlds being shaped at Ripple',items:pick('astra','kali','signal','echo')},
-  {id:'editorial-mythology',title:'Mythology & Epics',reason:'Original editorial concepts • Coming Soon',items:pick('astra','samudra','lanka','garuda','shakti')},
-  {id:'editorial-ai-cinema',title:'AI Cinema',reason:'Imagination, amplified',items:pick('kali','amrita','mayavi','echo')},
-  {id:'editorial-series',title:'Series',reason:'Stories built to unfold',items:editorialTitles.filter(x=>x.format==='Series')},
-  {id:'editorial-films',title:'Films',reason:'Feature-length concepts',items:editorialTitles.filter(x=>x.format==='Film')},
-  {id:'editorial-shorts',title:'Shorts',reason:'Brief stories. Lasting worlds.',items:editorialTitles.filter(x=>x.format==='Short')},
-  {id:'editorial-animation',title:'Animation',reason:'Frame by imagined frame',items:pick('anima','amrita','shakti')},
-  {id:'editorial-music',title:'Music & Mantras',reason:'Original audiovisual concepts',items:pick('raga','mayavi')},
-  {id:'editorial-coming',title:'Coming Soon',reason:'Preview the next wave of Ripple originals',items:editorialTitles},
+  {id:'editorial-featured',title:'Featured',items:pick('astra','kali','signal','echo')},
+  {id:'editorial-mythology',title:'Mythology & Epics',items:editorialTitles.filter(x=>x.genre==='Mythology & Epics')},
+  {id:'editorial-ai-cinema',title:'AI Cinema',items:editorialTitles.filter(x=>x.genre==='AI Cinema')},
+  {id:'editorial-series',title:'Series',items:editorialTitles.filter(x=>x.format==='Series')},
+  {id:'editorial-films',title:'Films',items:editorialTitles.filter(x=>x.format==='Film')},
+  {id:'editorial-shorts',title:'Shorts',items:editorialTitles.filter(x=>x.format==='Short')},
+  {id:'editorial-animation',title:'Animation',items:editorialTitles.filter(x=>x.format==='Animation')},
+  {id:'editorial-music',title:'Music & Mantras',items:editorialTitles.filter(x=>x.format==='Music')},
 ];
 
 const browseRows = format => [
