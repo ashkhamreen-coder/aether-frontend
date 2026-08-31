@@ -18,6 +18,7 @@ import { serviceState, progressPayload } from '../../consumerCore';
 import { playbackDecision } from '../../playerReliability';
 import { currentPath, KNOWN_ROUTES, navigate as go } from './router';
 import { tokens } from '../theme/tokens';
+import { editorialTitles, routeEditorial } from '../data/editorial';
 
 const titleIdFromPath = path => path.startsWith('/title/') ? decodeURIComponent(path.slice(7)) : '';
 
@@ -94,14 +95,16 @@ export function AppShell() {
   else if (['/account', '/profiles', '/profiles/new', '/onboarding'].includes(path)) screen = <ProfileScreen route={path} user={user} navigate={navigate} onLogout={() => setUser(null)} onRefresh={load}/>;
   else if (['/films', '/series', '/shorts'].includes(path)) {
     const key = path.slice(1), type = key.replace(/s$/, '');
-    const items = catalogue.filter(item => String(item.type || item.contentType).toLowerCase().includes(type));
-    const rows = state.rows.filter(row => String(row.title || '').toLowerCase().includes(type));
+    const liveItems = catalogue.filter(item => String(item.type || item.contentType).toLowerCase().includes(type));
+    const liveRows = state.rows.filter(row => String(row.title || '').toLowerCase().includes(type));
+    const items = liveItems.length || liveRows.length ? liveItems : editorialTitles.filter(item => item.type === type);
+    const rows = liveRows.length ? liveRows : (liveItems.length ? [] : routeEditorial[key]);
     screen = <CatalogueScreen title={key[0].toUpperCase() + key.slice(1)} loading={state.loading} items={items} rows={rows} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={saved}/>;
   } else if (path === '/my-list') screen = <CatalogueScreen title="My List" items={catalogue.filter(item => saved.has(idOf(item)))} onOpen={open} empty={user ? 'Titles you save will appear here.' : 'Sign in to use My List.'}/>;
   else if (titleIdFromPath(path)) screen = detailState.loading ? <StatePanel busy title="Loading title" message="Fetching title details from Ripple."/> : detailState.error ? <StatePanel title="Title couldn’t load" message={detailState.error} action="Try again" onAction={() => loadDetails(titleIdFromPath(path))}/> : <View/>;
   else if (!KNOWN_ROUTES.has(path)) screen = <StatePanel title="Page not found" message="That Ripple destination does not exist." action="Go home" onAction={() => navigate('/')}/>;
   else screen = <StatePanel title="Experience unavailable" message="Ripple will enable this screen when the backend capability is available." action="Go home" onAction={() => navigate('/')}/>;
 
-  return <SafeAreaView style={styles.safe}><Header overlay={path === '/'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} onSignIn={() => navigate(user ? '/account' : '/signin')}/><View style={styles.body}>{screen}</View>{compact ? <MobileNavigation path={path} navigate={navigate}/> : null}<ContentDetails item={details} onClose={closeDetails} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
+  return <SafeAreaView style={styles.safe}><Header overlay={path === '/'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} onSignIn={() => navigate(user ? '/account' : '/signin')}/><View style={styles.body}>{screen}</View>{compact ? <MobileNavigation path={path} navigate={navigate}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: tokens.color.background }, body: { flex: 1, minWidth: 0 } });

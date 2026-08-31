@@ -2,8 +2,9 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { HeroBanner } from '../components/HeroBanner';
 import { ContentRail } from '../components/ContentRail';
-import { editorialRows, editorialTitles } from '../data/editorial';
+import { editorialRows, editorialHeroes } from '../data/editorial';
 import { tokens } from '../theme/tokens';
+const editorialTitles = editorialHeroes;
 import { homeScreenContent } from '../../contentPresentation';
 
 export function HomeScreen({ state, retry, onOpen, onPlay, onToggleList, saved, canSave, onScroll }) {
