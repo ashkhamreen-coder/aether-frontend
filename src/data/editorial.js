@@ -1,10 +1,10 @@
 const art = {
-  astra: require('../../assets/hero_neon.png'), samudra: require('../../assets/trend_eclipse.png'),
-  lanka: require('../../assets/trend_sands.png'), garuda: require('../../assets/film_signal.png'),
-  kali: require('../../assets/film_neon.png'), amrita: require('../../assets/art_chromatic.png'),
-  shakti: require('../../assets/short_afterlight.png'), mayavi: require('../../assets/music_midnight.png'),
-  anima: require('../../assets/art_eternal.png'), raga: require('../../assets/music_copper.png'),
-  signal: require('../../assets/trend_electric.png'), echo: require('../../assets/film_echoes.png'),
+  astra: require('../../assets/editorial/astra.svg'), samudra: require('../../assets/editorial/samudra.svg'),
+  lanka: require('../../assets/editorial/lanka.svg'), garuda: require('../../assets/editorial/garuda.svg'),
+  kali: require('../../assets/editorial/kali.svg'), amrita: require('../../assets/editorial/amrita.svg'),
+  shakti: require('../../assets/editorial/shakti.svg'), mayavi: require('../../assets/editorial/mayavi.svg'),
+  anima: require('../../assets/editorial/anima.svg'), raga: require('../../assets/editorial/raga.svg'),
+  signal: require('../../assets/editorial/monsoon-signal.svg'), echo: require('../../assets/editorial/echoes-of-nila.svg'),
 };
 
 const preview = (id,title,image,genre,synopsis,type='film') => ({
