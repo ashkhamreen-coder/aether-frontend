@@ -1,0 +1,4 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');
+test('catalogue sizing follows phone tablet and desktop formulas',()=>{const c=fs.readFileSync('src/components/ContentCard.js','utf8');assert.match(c,/width\*\.82,330/);assert.match(c,/width\*\.42,250/);assert.match(c,/width\*\.24,300/);assert.match(c,/aspectRatio:16\/9/);assert.match(c,/aspectRatio:2\/3/)});
+test('rails have 16px gap, 24px heading clearance, and horizontal scrolling',()=>{const r=fs.readFileSync('src/components/ContentRail.js','utf8');assert.match(r,/horizontal/);assert.match(r,/marginBottom:24/);assert.match(r,/gap:16/)});
+test('mobile navigation exposes requested four destinations',()=>{const n=fs.readFileSync('src/components/MobileNavigation.js','utf8');for(const x of ['Home','New','My List','Profile'])assert.match(n,new RegExp(x));assert.doesNotMatch(n,/\['\/search'/);assert.match(n,/safe-area-inset-bottom/)});
