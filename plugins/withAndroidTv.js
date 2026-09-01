@@ -1,10 +1,5 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const {
-  AndroidConfig,
-  withAndroidManifest,
-  withDangerousMod,
-} = require('expo/config-plugins');
 
 const PLACEHOLDER_RESOURCES = {
   'app_icon_placeholder.xml': `<?xml version="1.0" encoding="utf-8"?>
@@ -28,8 +23,11 @@ function setAttribute(node, name, value) {
 
 function applyTvManifest(androidManifest) {
   const manifest = androidManifest.manifest;
-  const application = AndroidConfig.Manifest.getMainApplicationOrThrow(androidManifest);
-  const activity = AndroidConfig.Manifest.getMainActivityOrThrow(androidManifest);
+  const application = manifest.application?.[0];
+  const activity = application?.activity?.find((candidate) =>
+    candidate.$?.['android:name'] === '.MainActivity'
+  ) || application?.activity?.[0];
+  if (!application || !activity) throw new Error('Android main application/activity is missing.');
 
   setAttribute(application, 'banner', '@drawable/tv_banner_placeholder');
   setAttribute(application, 'icon', '@drawable/app_icon_placeholder');
@@ -65,6 +63,7 @@ function applyTvManifest(androidManifest) {
 }
 
 function withAndroidTv(config) {
+  const { withAndroidManifest, withDangerousMod } = require('expo/config-plugins');
   config = withAndroidManifest(config, (mod) => {
     mod.modResults = applyTvManifest(mod.modResults);
     return mod;

@@ -15,3 +15,17 @@ npm-debug.log*
 *.jar
 *.keystore
 *.jks
+
+# Local native tooling, EAS output, archives, and credentials
+.gradle/
+**/.gradle/
+**/build/
+.eas/
+.eas-build-local/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+credentials.json
+android/keystore.properties
+local.properties

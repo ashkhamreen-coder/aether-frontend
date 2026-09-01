@@ -13,7 +13,12 @@
     "build:web": "npm run build",
     "preview": "npx serve dist",
     "check": "npx expo-doctor",
-    "test": "node --test *.test.js"
+    "test": "node --test *.test.js",
+    "android": "expo run:android",
+    "android:prebuild": "expo prebuild --platform android",
+    "build:android:development": "eas build --platform android --profile development",
+    "build:android:preview": "eas build --platform android --profile preview",
+    "build:android:production": "eas build --platform android --profile production"
   },
   "engines": {
     "node": ">=20.19.0"
