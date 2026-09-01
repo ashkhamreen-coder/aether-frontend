@@ -77,6 +77,16 @@ export function AppShell() {
 
   useEffect(() => { if (path === '/' && authResolved && user) replace('/browse'); }, [path, authResolved, user, replace]);
 
+  useEffect(() => {
+    if (!authResolved) return;
+    if (user && ['/signin', '/signup'].includes(path)) { replace('/browse'); return; }
+    const protectedRoutes = ['/account', '/account/subscription', '/my-list', '/profiles', '/profiles/new', '/onboarding'];
+    if (!user && protectedRoutes.includes(path)) {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('ripple_intended_route', path);
+      replace('/signin');
+    }
+  }, [path, authResolved, user, replace]);
+
   const loadDetails = useCallback(async id => {
     if (!id) return;
     setDetailState({ loading: true, error: '' });
@@ -118,7 +128,7 @@ export function AppShell() {
     const comingSoon = catalogue.filter(item => item.comingSoon || String(item.releaseStatus || '').toLowerCase() === 'coming soon').concat(editorialTitles.filter(item => item.isEditorialPreview));
     screen = <CatalogueScreen title="New & Popular" items={recentlyAdded} rows={comingSoon.length ? [{ id:'coming-soon', title:'Coming Soon', items:comingSoon, portrait:true }] : []} loading={state.loading} onOpen={open} onPlay={play} empty="No recently added titles are available right now."/>;
   }
-  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} initialEmail={path === '/signup' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') || '' : ''} navigate={navigate} onComplete={(value,created) => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); replace(created?'/onboarding':intended||'/browse'); }}/>;
+  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} initialEmail={path === '/signup' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') || '' : ''} navigate={navigate} onComplete={value => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); replace(intended||'/browse'); }}/>;
   else if (path === '/forgot-password' || path === '/reset-password') screen = <PasswordScreen reset={path === '/reset-password'} navigate={navigate}/>;
   else if (['/account', '/profiles', '/profiles/new', '/onboarding'].includes(path)) screen = <ProfileScreen route={path} user={user} navigate={navigate} onLogout={() => { setUser(null); setSubscription(null); setAuthResolved(true); }} onRefresh={load}/>;
   else if (path === '/plans') screen = <PlansScreen user={user} subscription={subscription} navigate={navigate} onSubscription={setSubscription}/>;

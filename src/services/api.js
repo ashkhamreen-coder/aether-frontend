@@ -1,6 +1,6 @@
 import { createApiClient } from '../../apiClient';
 import { getApiBaseUrl } from '../../apiConfig';
-import { getAccessToken, setAccessToken } from './session';
+import { clearSession, getAccessToken, setAccessToken } from './session';
 
 const baseUrl = getApiBaseUrl();
 let client;
@@ -15,7 +15,7 @@ async function refreshToken() {
   } catch { return false; }
 }
 export function api(path, options) {
-  client ||= createApiClient({ baseUrl, getToken:getAccessToken, refreshToken, onUnauthorized:()=>setAccessToken(null), timeoutMs:15000 });
+  client ||= createApiClient({ baseUrl, getToken:getAccessToken, refreshToken, onUnauthorized:clearSession, timeoutMs:15000 });
   return client.request(path, options);
 }
 export { baseUrl };

@@ -30,6 +30,7 @@ function createApiClient({ baseUrl, getToken, refreshToken, onUnauthorized, fetc
         const response = await fetchImpl(`${base}${normalizedPath}`, {
           ...Object.fromEntries(Object.entries(options).filter(([key]) => !key.startsWith('_'))),
           signal: controller.signal,
+          credentials: options.credentials || 'include',
           headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
         });
         const type = response.headers?.get?.('content-type') || '';

@@ -24,7 +24,7 @@ test('browse retains the existing OTT HomeScreen and is a known direct route', (
 });
 
 test('logout clears stored and in-memory session then returns to root', () => {
-  assert.match(read('src/screens/ProfileScreen.js'), /setAccessToken\(null\).*navigate\('\/'\)/);
+  assert.match(read('src/screens/ProfileScreen.js'), /await signOut\(\).*navigate\('\/'\)/);
   assert.match(shell(), /onLogout=\{\(\) => \{ setUser\(null\); setSubscription\(null\); setAuthResolved\(true\); \}\}/);
 });
 
