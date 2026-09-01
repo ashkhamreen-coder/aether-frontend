@@ -2,12 +2,10 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { tokens } from '../theme/tokens';
 
-const links = [
+const baseLinks = [
   ['/browse', 'home', 'Home'],
   ['/new', 'spark', 'New'],
   ['/search', 'search', 'Search'],
-  ['/my-list', 'bookmark', 'My List'],
-  ['/account', 'profile', 'Profile'],
 ];
 
 function LineIcon({ name, active }) {
@@ -20,8 +18,10 @@ function LineIcon({ name, active }) {
   </View>;
 }
 
-export function MobileNavigation({ navigate, path, hidden = false }) {
+export function MobileNavigation({ navigate, path, hidden = false, user, profile }) {
   if (hidden) return null;
+  const profileName=profile?.name||profile?.displayName||user?.displayName||user?.name;
+  const links=user?[...baseLinks,['/my-list','bookmark','My List'],['/account','profile',profileName||'Profile']]:[...baseLinks,['/my-list','bookmark','My List'],['/signin','profile','Sign In']];
   return <View accessibilityRole="tablist" accessibilityLabel="App navigation" style={s.nav}>
     {links.map(([url, icon, label]) => {
       const selected = path === url || (url === '/account' && path.startsWith('/account'));
