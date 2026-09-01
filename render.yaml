@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: aether-frontend
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: EXPO_PUBLIC_API_URL
+        value: https://ripple-api-p67c.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

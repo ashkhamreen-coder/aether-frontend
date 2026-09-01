@@ -26,7 +26,7 @@ function createApiClient({ baseUrl, getToken, refreshToken, onUnauthorized, fetc
       const abort = () => controller.abort();
       options.signal?.addEventListener('abort', abort, { once: true });
       try {
-        const token = await getToken?.();
+        const token = options._skipAuth ? null : await getToken?.();
         const response = await fetchImpl(`${base}${normalizedPath}`, {
           ...Object.fromEntries(Object.entries(options).filter(([key]) => !key.startsWith('_'))),
           signal: controller.signal,
