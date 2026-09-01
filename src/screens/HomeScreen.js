@@ -7,10 +7,10 @@ import { tokens } from '../theme/tokens';
 const editorialTitles = editorialHeroes;
 import { homeScreenContent } from '../../contentPresentation';
 
-export function HomeScreen({ state, retry, onOpen, onPlay, onToggleList, saved, canSave, onScroll }) {
+export function HomeScreen({ state, retry, onOpen, onPlay, onToggleList, saved, canSave, onScroll, showTechnicalTests = false }) {
   const { live, concepts, featured, showEditorial } = homeScreenContent(state, editorialRows, editorialTitles);
   const rows = [...live, ...concepts];
-  const technical = Array.isArray(state?.technical) ? state.technical.filter(item => item && (item.id || item._id || item.contentId)) : [];
+  const technical = showTechnicalTests && Array.isArray(state?.technical) ? state.technical.filter(item => item && (item.id || item._id || item.contentId)) : [];
   return <ScrollView style={s.page} contentContainerStyle={s.content} onScroll={onScroll} scrollEventThrottle={32}>
     {state?.loading && !featured.length
       ? <View accessibilityLabel="Loading featured title" style={s.heroSkeleton}><View style={s.skeletonTitle}/><View style={s.skeletonCopy}/></View>

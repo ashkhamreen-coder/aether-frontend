@@ -22,8 +22,11 @@ import { playbackDecision } from '../../playerReliability';
 import { currentPath, KNOWN_ROUTES, navigate as go, replace as replaceRoute } from './router';
 import { tokens } from '../theme/tokens';
 import { editorialTitles, routeEditorial } from '../data/editorial';
+import { technicalPlaybackTestsEnabled } from '../config/features';
 
 const titleIdFromPath = path => path.startsWith('/title/') ? decodeURIComponent(path.slice(7)) : '';
+const selectedProfileOf = user => user?.selectedProfile || user?.activeProfile || user?.profile || (Array.isArray(user?.profiles) ? user.profiles.find(profile => profile.selected || profile.active) : null);
+const needsOnboarding = user => Boolean(user && (user.needsOnboarding === true || user.onboardingComplete === false || user.preferencesComplete === false));
 
 export function AppShell() {
   const { width } = useWindowDimensions();
@@ -53,7 +56,7 @@ export function AppShell() {
       const rows = normalizeRows(home);
       const allContent = (contentResult.status === 'fulfilled' ? arrayFrom(contentResult.value, 'content') : []).filter(item => item && idOf(item));
       const catalogue = allContent.filter(item => !isTechnicalTest(item));
-      const technical = allContent.filter(isTechnicalTest);
+      const technical = technicalPlaybackTestsEnabled ? allContent.filter(isTechnicalTest) : [];
       const featured = arrayFrom(home, 'featured').concat(rows.flatMap(row => row.items)).filter(item => item && !isTechnicalTest(item));
       setState({ loading: false, error: '', service: 'ready', rows, catalogue, technical, hero: featured.find(item => item.featured) || featured[0] || null });
     } catch (error) {
@@ -69,11 +72,16 @@ export function AppShell() {
       if (session?.expiresAt && Number(session.expiresAt) <= Date.now()) { await clearSession(); return; }
       try {
         const value = await api('/api/me');
-        if (active) { setUser(value.user || value); setSubscription(value.subscription || value.user?.subscription || null); }
+        if (active) {
+          const resolvedUser=value.user || value;
+          setUser(resolvedUser); setSubscription(value.subscription || value.user?.subscription || null);
+          await load();
+          if (needsOnboarding(resolvedUser) && !['/onboarding','/profiles/new'].includes(currentPath())) replace('/onboarding');
+        }
       } catch { await clearSession(); }
     }).finally(() => { if (active) setAuthResolved(true); });
     return () => { active = false; };
-  }, [load]);
+  }, [load, replace]);
 
   useEffect(() => { if (path === '/' && authResolved && user) replace('/browse'); }, [path, authResolved, user, replace]);
 
@@ -121,14 +129,14 @@ export function AppShell() {
   let screen;
   if (path === '/' && !authResolved) screen = <StatePanel busy title="Loading Ripple" message="Checking your session."/>;
   else if (path === '/') screen = <WelcomeScreen navigate={navigate}/>;
-  else if (path === '/browse') screen = <HomeScreen state={state} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} canSave={Boolean(user)} onScroll={event => setHeaderScrolled(event.nativeEvent.contentOffset.y > 36)}/>;
+  else if (path === '/browse') screen = <HomeScreen state={state} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} canSave={Boolean(user)} showTechnicalTests={technicalPlaybackTestsEnabled} onScroll={event => setHeaderScrolled(event.nativeEvent.contentOffset.y > 36)}/>;
   else if (path === '/search') screen = <SearchScreen onOpen={open}/>;
   else if (path === '/new') {
     const recentlyAdded = catalogue.filter(item => !item.comingSoon && String(item.releaseStatus || '').toLowerCase() !== 'coming soon');
     const comingSoon = catalogue.filter(item => item.comingSoon || String(item.releaseStatus || '').toLowerCase() === 'coming soon').concat(editorialTitles.filter(item => item.isEditorialPreview));
     screen = <CatalogueScreen title="New & Popular" items={recentlyAdded} rows={comingSoon.length ? [{ id:'coming-soon', title:'Coming Soon', items:comingSoon, portrait:true }] : []} loading={state.loading} onOpen={open} onPlay={play} empty="No recently added titles are available right now."/>;
   }
-  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} initialEmail={path === '/signup' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') || '' : ''} navigate={navigate} onComplete={value => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); replace(intended||'/browse'); }}/>;
+  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} initialEmail={path === '/signup' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') || '' : ''} navigate={navigate} onComplete={(value,isNew) => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); if(isNew||needsOnboarding(value)) replace('/onboarding'); else replace(intended||'/browse'); load(); }}/>;
   else if (path === '/forgot-password' || path === '/reset-password') screen = <PasswordScreen reset={path === '/reset-password'} navigate={navigate}/>;
   else if (['/account', '/profiles', '/profiles/new', '/onboarding'].includes(path)) screen = <ProfileScreen route={path} user={user} navigate={navigate} onLogout={() => { setUser(null); setSubscription(null); setAuthResolved(true); }} onRefresh={load}/>;
   else if (path === '/plans') screen = <PlansScreen user={user} subscription={subscription} navigate={navigate} onSubscription={setSubscription}/>;
@@ -149,6 +157,7 @@ export function AppShell() {
 
   const publicWelcome = path === '/';
   const authPage = ['/signin','/signup','/forgot-password','/reset-password'].includes(path);
-  return <SafeAreaView style={styles.safe}>{!publicWelcome && !authPage ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{compact && !publicWelcome && !authPage ? <MobileNavigation path={path} navigate={navigate} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
+  const selectedProfile=selectedProfileOf(user);
+  return <SafeAreaView style={styles.safe}>{!publicWelcome && !authPage ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} user={user} profile={selectedProfile} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{compact && !publicWelcome && !authPage ? <MobileNavigation path={path} navigate={navigate} user={user} profile={selectedProfile} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex:1, minHeight:'100vh', minHeight:'100svh', minHeight:'100dvh', backgroundColor:'#05030d' }, body: { flex:1, minWidth:0, minHeight:0, backgroundColor:'#05030d', overflowX:'hidden' } });
