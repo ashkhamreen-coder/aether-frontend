@@ -17,12 +17,17 @@ test('real plan response shapes map all production subscription fields without i
   assert.equal(plans[1].name, 'Premium');
   assert.equal(plans[1].price, '₹499');
   assert.equal(plans[1].available, false);
-  assert.equal(normalizeWelcomePlan({name:'Standard'}).price, 'Price unavailable');
+  assert.equal(normalizeWelcomePlan({name:'Standard'}), null);
+  const realConvention = normalizeWelcomePlan({ code:'pro', display_name:'Ripple Pro', price_minor:49900, currency:'INR', billing_interval:'month', max_video_quality:'4K', simultaneous_streams:4, ads_enabled:false, downloads_allowed:true });
+  assert.equal(realConvention.name, 'Ripple Pro');
+  assert.match(realConvention.price, /499/);
+  assert.equal(realConvention.ads, 'Not included');
 });
 
 test('plan API failure and empty data render one honest fallback rather than duplicate placeholders', () => {
   assert.match(welcome, /PLAN_FALLBACK_TITLE = 'Free access available'/);
-  assert.match(welcome, /Premium plans are temporarily unavailable\. You can continue exploring Ripple\./);
+  assert.match(welcome, /Premium plan details are temporarily unavailable\./);
+  assert.doesNotMatch(welcome, /Unnamed plan|Price unavailable/);
   assert.match(welcome, /catch\(\(\)=>\{if\(live\)setPlanStatus\('unavailable'\)\}\)/);
   assert.doesNotMatch(welcome, /Ripple plan|View plan|plans\.slice\(0,3\)/);
 });
@@ -56,7 +61,17 @@ test('cinematic hero uses a restrained mixed montage, optimized Cloudinary deliv
   assert.match(welcome, /loading=\{critical\?'eager':'lazy'\}/);
   assert.match(welcome, /prefers-reduced-motion: reduce/);
   assert.match(welcome, /navigator\.connection\?\.saveData/);
-  assert.match(welcome, /conserveData \? montage\.slice\(0,3\) : montage/);
+  assert.match(welcome, /width < 480\) \? montage\.slice\(0,3\)/);
+});
+
+test('hero guards use all six explicit safe type pairs and layout-independent artwork', () => {
+  for (const pair of ['38,42','44,48','52,57','64,69','76,81','88,94']) assert.match(welcome, new RegExp(`\\[${pair.replace(',','\\,')},`));
+  assert.match(welcome, /lineHeight <= fontSize \* 1\.2/);
+  assert.match(welcome, /webStyle\.lineHeight = `\$\{webStyle\.lineHeight\}px`/);
+  assert.match(welcome, /montage:\{position:'absolute'/);
+  assert.match(welcome, /pointerEvents:'none'/);
+  assert.match(welcome, /maxHeight:300/);
+  assert.match(welcome, /formFull:\{width:'100%'/);
 });
 
 test('authentication and browse navigation remain real and URL-safe', () => {
