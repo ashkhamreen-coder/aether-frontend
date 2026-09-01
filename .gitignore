@@ -1,8 +1,17 @@
 node_modules/
 dist/
 .expo/
+android/
+ios/
 .env
 .env.*
 !.env.example
 npm-debug.log*
 .DS_Store
+
+# Native release artifacts and signing credentials must never be versioned.
+*.apk
+*.aab
+*.jar
+*.keystore
+*.jks
