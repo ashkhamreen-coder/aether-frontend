@@ -1,5 +1,5 @@
 export const tokens = {
-  color: { background:'#050509', surface:'#111118', elevated:'#191922', text:'#f7f5fa', muted:'#aaa6b2', accent:'#8070e8', accentSoft:'#b5a9ff', danger:'#ff7385', border:'rgba(255,255,255,.13)' },
+  color: { background:'#05030d', surface:'#111118', elevated:'#191922', text:'#f7f5fa', muted:'#aaa6b2', accent:'#8070e8', accentSoft:'#b5a9ff', danger:'#ff7385', border:'rgba(255,255,255,.13)' },
   space: { xs:4, sm:8, md:16, lg:24, xl:40 },
   rail: {
     sectionGap: { mobile:34, tablet:40, desktop:48 },

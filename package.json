@@ -9,7 +9,7 @@
     "dev": "expo start --web",
     "web": "expo start --web",
     "prebuild": "node scripts/validate-production-env.js",
-    "build": "expo export --platform web --output-dir dist",
+    "build": "expo export --platform web --output-dir dist && node scripts/fix-web-document.js",
     "build:web": "npm run build",
     "preview": "npx serve dist",
     "check": "npx expo-doctor",
