@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import { MobileNavigation } from '../components/MobileNavigation';
 import { ContentDetails } from '../components/ContentDetails';
 import { VideoPlayer } from '../components/VideoPlayer';
+import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { CatalogueScreen } from '../screens/CatalogueScreen';
 import { SearchScreen } from '../screens/SearchScreen';
@@ -18,7 +19,7 @@ import { getAccessToken } from '../services/session';
 import { arrayFrom, idOf, isTechnicalTest, normalizeRows } from '../utils/content';
 import { serviceState, progressPayload } from '../../consumerCore';
 import { playbackDecision } from '../../playerReliability';
-import { currentPath, KNOWN_ROUTES, navigate as go } from './router';
+import { currentPath, KNOWN_ROUTES, navigate as go, replace as replaceRoute } from './router';
 import { tokens } from '../theme/tokens';
 import { editorialTitles, routeEditorial } from '../data/editorial';
 
@@ -30,6 +31,7 @@ export function AppShell() {
   const [path, setPath] = useState(currentPath);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [user, setUser] = useState(null);
+  const [authResolved, setAuthResolved] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [details, setDetails] = useState(null);
   const [detailState, setDetailState] = useState({ loading: false, error: '' });
@@ -37,6 +39,7 @@ export function AppShell() {
   const [saved, setSaved] = useState(new Set());
   const [state, setState] = useState({ loading: true, error: '', service: 'ready', rows: [], catalogue: [], technical: [], hero: null });
   const navigate = useCallback(next => go(next, setPath), []);
+  const replace = useCallback(next => replaceRoute(next, setPath), []);
 
   useEffect(() => { if (typeof window === 'undefined') return; const pop = () => setPath(currentPath()); window.addEventListener('popstate', pop); return () => window.removeEventListener('popstate', pop); }, []);
 
@@ -58,7 +61,20 @@ export function AppShell() {
     }
   }, []);
 
-  useEffect(() => { load(); getAccessToken().then(token => token && api('/api/me').then(value => { setUser(value.user || value); setSubscription(value.subscription || value.user?.subscription || null); }).catch(() => {})); }, [load]);
+  useEffect(() => {
+    load();
+    let active = true;
+    getAccessToken().then(async token => {
+      if (!token) return;
+      try {
+        const value = await api('/api/me');
+        if (active) { setUser(value.user || value); setSubscription(value.subscription || value.user?.subscription || null); }
+      } catch {}
+    }).finally(() => { if (active) setAuthResolved(true); });
+    return () => { active = false; };
+  }, [load]);
+
+  useEffect(() => { if (path === '/' && authResolved && user) replace('/browse'); }, [path, authResolved, user, replace]);
 
   const loadDetails = useCallback(async id => {
     if (!id) return;
@@ -69,7 +85,7 @@ export function AppShell() {
 
   useEffect(() => { const id = titleIdFromPath(path); if (id) loadDetails(id); else setDetails(null); }, [path, loadDetails]);
   const open = useCallback(item => { if (item?.isEditorialPreview) { setDetails(item); return; } const id = idOf(item); if (id) navigate(`/title/${encodeURIComponent(id)}`); }, [navigate]);
-  const closeDetails = useCallback(() => navigate('/'), [navigate]);
+  const closeDetails = useCallback(() => navigate('/browse'), [navigate]);
 
   const play = useCallback(async item => {
     const id = idOf(item); if (!id) return;
@@ -92,16 +108,18 @@ export function AppShell() {
 
   const catalogue = useMemo(() => state.catalogue.filter(item => !isTechnicalTest(item)), [state.catalogue]);
   let screen;
-  if (path === '/') screen = <HomeScreen state={state} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} canSave={Boolean(user)} onScroll={event => setHeaderScrolled(event.nativeEvent.contentOffset.y > 36)}/>;
+  if (path === '/' && !authResolved) screen = <StatePanel busy title="Loading Ripple" message="Checking your session."/>;
+  else if (path === '/') screen = <WelcomeScreen navigate={navigate}/>;
+  else if (path === '/browse') screen = <HomeScreen state={state} retry={load} onOpen={open} onPlay={play} onToggleList={toggleList} saved={saved} canSave={Boolean(user)} onScroll={event => setHeaderScrolled(event.nativeEvent.contentOffset.y > 36)}/>;
   else if (path === '/search') screen = <SearchScreen onOpen={open}/>;
   else if (path === '/new') {
     const recentlyAdded = catalogue.filter(item => !item.comingSoon && String(item.releaseStatus || '').toLowerCase() !== 'coming soon');
     const comingSoon = catalogue.filter(item => item.comingSoon || String(item.releaseStatus || '').toLowerCase() === 'coming soon').concat(editorialTitles.filter(item => item.isEditorialPreview));
     screen = <CatalogueScreen title="New & Popular" items={recentlyAdded} rows={comingSoon.length ? [{ id:'coming-soon', title:'Coming Soon', items:comingSoon, portrait:true }] : []} loading={state.loading} onOpen={open} onPlay={play} empty="No recently added titles are available right now."/>;
   }
-  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} navigate={navigate} onComplete={(value,created) => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); navigate(created?'/onboarding':intended||'/profiles'); }}/>;
+  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} initialEmail={path === '/signup' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') || '' : ''} navigate={navigate} onComplete={(value,created) => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); navigate(created?'/onboarding':intended||'/profiles'); }}/>;
   else if (path === '/forgot-password' || path === '/reset-password') screen = <PasswordScreen reset={path === '/reset-password'} navigate={navigate}/>;
-  else if (['/account', '/profiles', '/profiles/new', '/onboarding'].includes(path)) screen = <ProfileScreen route={path} user={user} navigate={navigate} onLogout={() => setUser(null)} onRefresh={load}/>;
+  else if (['/account', '/profiles', '/profiles/new', '/onboarding'].includes(path)) screen = <ProfileScreen route={path} user={user} navigate={navigate} onLogout={() => { setUser(null); setSubscription(null); setAuthResolved(true); }} onRefresh={load}/>;
   else if (path === '/plans') screen = <PlansScreen user={user} subscription={subscription} navigate={navigate} onSubscription={setSubscription}/>;
   else if (path === '/account/subscription') screen = user?<SubscriptionScreen subscription={subscription} navigate={navigate} onChanged={setSubscription}/>:<AuthScreen navigate={navigate} onComplete={value=>{setUser(value);navigate('/account/subscription')}}/>;
   else if (path === '/checkout/success') screen = <StatePanel title="Confirming subscription" message="Ripple will show your plan after the billing backend confirms it." action="View subscription" onAction={()=>navigate('/account/subscription')}/>;
@@ -118,6 +136,7 @@ export function AppShell() {
   else if (!KNOWN_ROUTES.has(path)) screen = <StatePanel title="Page not found" message="That Ripple destination does not exist." action="Go home" onAction={() => navigate('/')}/>;
   else screen = <StatePanel title="Experience unavailable" message="Ripple will enable this screen when the backend capability is available." action="Go home" onAction={() => navigate('/')}/>;
 
-  return <SafeAreaView style={styles.safe}><Header overlay={path === '/'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/><View style={styles.body}>{screen}</View>{compact ? <MobileNavigation path={path} navigate={navigate} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
+  const publicWelcome = path === '/';
+  return <SafeAreaView style={styles.safe}>{!publicWelcome ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{compact && !publicWelcome ? <MobileNavigation path={path} navigate={navigate} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex:1, minHeight:'100dvh', backgroundColor:tokens.color.background }, body: { flex:1, minWidth:0, minHeight:0, overflowX:'hidden' } });
