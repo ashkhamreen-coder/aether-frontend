@@ -22,7 +22,7 @@ export function HeroBanner({ items=[], onOpen, onPlay, onToggleList, saved=new S
     onPanResponderTerminate: () => setPaused(false),
   })).current;
   useEffect(() => { if (paused || list.length < 2 || typeof window === 'undefined' || document.visibilityState === 'hidden' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return; const timer=setInterval(()=>setIndex(i=>(i+1)%list.length),12000); return()=>clearInterval(timer); }, [paused,list.length]);
-  useEffect(() => { if (!item) return; setLoaded(false); setFailed(false); [item,list[(index+1)%list.length]].map(x=>cloudinaryImageUrl(x?.backdropUrl||x?.heroImageUrl||x?.imageUrl,'hero')).filter(Boolean).forEach(url=>Image.prefetch?.(url)); }, [index,item,list]);
+  useEffect(() => { if (!item) return; setLoaded(false); setFailed(false); const url=cloudinaryImageUrl(item.backdropUrl||item.heroImageUrl||item.imageUrl,'hero'); if(url) Image.prefetch?.(url); }, [index,item]);
   if (!item) return null;
   const rawImage=item.backdropUrl||item.heroImageUrl||item.imageUrl||item.posterUrl||item.image;
   const image=typeof rawImage==='string'?cloudinaryImageUrl(rawImage,'hero'):rawImage;
