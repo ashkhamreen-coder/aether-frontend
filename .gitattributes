@@ -1,0 +1,8 @@
+# Reject accidental reviews of release artifacts; these are ignored and must remain external.
+*.apk binary
+*.aab binary
+*.keystore binary
+*.jks binary
+*.zip binary
+*.tar binary
+*.gz binary

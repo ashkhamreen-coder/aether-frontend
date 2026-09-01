@@ -6,7 +6,8 @@
     "orientation": "default",
     "userInterfaceStyle": "dark",
     "android": {
-      "package": "com.aethercreators.ripple"
+      "package": "com.aethercreators.ripple",
+      "versionCode": 2
     },
     "plugins": [
       "./plugins/withAndroidTv"
