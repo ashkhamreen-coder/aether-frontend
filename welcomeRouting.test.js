@@ -41,3 +41,25 @@ test('Get Started validates email and prefills sign-up', () => {
   assert.match(shell(), /new URLSearchParams\(window\.location\.search\)\.get\('email'\)/);
   assert.match(read('src/screens/AuthScreen.js'), /useState\(initialEmail\)/);
 });
+
+test('welcome headline uses responsive pixel line heights and is never artificially clipped', () => {
+  const source = welcome();
+  assert.match(source, /fontSize:36,lineHeight:40/);
+  assert.match(source, /fontSize:42,lineHeight:46/);
+  assert.match(source, /fontSize:58,lineHeight:63/);
+  assert.match(source, /fontSize:76,lineHeight:80/);
+  assert.match(source, /fontSize:92,lineHeight:96/);
+  assert.doesNotMatch(source, /lineHeight:\s*1(?:\.0?2|\.1)?[,}]/);
+  for (const [, fontSize, lineHeight] of source.matchAll(/fontSize:(36|42|58|76|92),lineHeight:(40|46|63|80|96)/g)) {
+    assert.ok(Number(lineHeight) > Number(fontSize) * .9, `rendered line box ${lineHeight}px must exceed 90% of ${fontSize}px font size`);
+  }
+  assert.match(source, /testID="welcome-headline"/);
+  assert.doesNotMatch(source, /title:\{[^}]*height:/);
+});
+
+test('welcome includes the complete public-page sections and live plan preview', () => {
+  const source = welcome();
+  for (const label of ['Why watch on Ripple', 'Explore the catalogue', 'Frequently Asked Questions', 'Start exploring Ripple']) assert.match(source, new RegExp(label));
+  assert.match(source, /api\('\/api\/subscriptions\/plans'\)/);
+  assert.match(source, /editorialTitles\.slice/);
+});
