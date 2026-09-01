@@ -15,7 +15,7 @@ import { PlansScreen } from '../screens/PlansScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { StatePanel } from '../components/StatePanel';
 import { api } from '../services/api';
-import { getAccessToken } from '../services/session';
+import { clearSession, getAccessToken, getSession } from '../services/session';
 import { arrayFrom, idOf, isTechnicalTest, normalizeRows } from '../utils/content';
 import { serviceState, progressPayload } from '../../consumerCore';
 import { playbackDecision } from '../../playerReliability';
@@ -64,12 +64,13 @@ export function AppShell() {
   useEffect(() => {
     load();
     let active = true;
-    getAccessToken().then(async token => {
+    Promise.all([getAccessToken(), getSession()]).then(async ([token, session]) => {
       if (!token) return;
+      if (session?.expiresAt && Number(session.expiresAt) <= Date.now()) { await clearSession(); return; }
       try {
         const value = await api('/api/me');
         if (active) { setUser(value.user || value); setSubscription(value.subscription || value.user?.subscription || null); }
-      } catch {}
+      } catch { await clearSession(); }
     }).finally(() => { if (active) setAuthResolved(true); });
     return () => { active = false; };
   }, [load]);
@@ -117,7 +118,7 @@ export function AppShell() {
     const comingSoon = catalogue.filter(item => item.comingSoon || String(item.releaseStatus || '').toLowerCase() === 'coming soon').concat(editorialTitles.filter(item => item.isEditorialPreview));
     screen = <CatalogueScreen title="New & Popular" items={recentlyAdded} rows={comingSoon.length ? [{ id:'coming-soon', title:'Coming Soon', items:comingSoon, portrait:true }] : []} loading={state.loading} onOpen={open} onPlay={play} empty="No recently added titles are available right now."/>;
   }
-  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} initialEmail={path === '/signup' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') || '' : ''} navigate={navigate} onComplete={(value,created) => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); navigate(created?'/onboarding':intended||'/profiles'); }}/>;
+  else if (path === '/signin' || path === '/signup') screen = <AuthScreen mode={path === '/signup' ? 'signup' : 'signin'} initialEmail={path === '/signup' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') || '' : ''} navigate={navigate} onComplete={(value,created) => { setUser(value); const intended=typeof sessionStorage!=='undefined'?sessionStorage.getItem('ripple_intended_route'):null; if(typeof sessionStorage!=='undefined')sessionStorage.removeItem('ripple_intended_route'); replace(created?'/onboarding':intended||'/browse'); }}/>;
   else if (path === '/forgot-password' || path === '/reset-password') screen = <PasswordScreen reset={path === '/reset-password'} navigate={navigate}/>;
   else if (['/account', '/profiles', '/profiles/new', '/onboarding'].includes(path)) screen = <ProfileScreen route={path} user={user} navigate={navigate} onLogout={() => { setUser(null); setSubscription(null); setAuthResolved(true); }} onRefresh={load}/>;
   else if (path === '/plans') screen = <PlansScreen user={user} subscription={subscription} navigate={navigate} onSubscription={setSubscription}/>;
@@ -137,6 +138,7 @@ export function AppShell() {
   else screen = <StatePanel title="Experience unavailable" message="Ripple will enable this screen when the backend capability is available." action="Go home" onAction={() => navigate('/')}/>;
 
   const publicWelcome = path === '/';
-  return <SafeAreaView style={styles.safe}>{!publicWelcome ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{compact && !publicWelcome ? <MobileNavigation path={path} navigate={navigate} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
+  const authPage = ['/signin','/signup','/forgot-password','/reset-password'].includes(path);
+  return <SafeAreaView style={styles.safe}>{!publicWelcome && !authPage ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{compact && !publicWelcome && !authPage ? <MobileNavigation path={path} navigate={navigate} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex:1, minHeight:'100vh', minHeight:'100svh', minHeight:'100dvh', backgroundColor:'#05030d' }, body: { flex:1, minWidth:0, minHeight:0, backgroundColor:'#05030d', overflowX:'hidden' } });
