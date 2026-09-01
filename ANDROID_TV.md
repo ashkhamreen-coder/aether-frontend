@@ -30,3 +30,21 @@ binary files to this repository:
 Update the config plugin resource references when that pipeline is available.
 Never commit APK, AAB, JAR, PNG, keystore/JKS, video, credentials, or generated
 native build files.
+
+## Runtime and SDK compatibility
+
+Expo's SDK 54 TV guide pairs React Native 0.81 with the published
+`react-native-tvos@0.81.5-0` release. The dependency uses npm's package alias so
+imports remain `react-native`, as required by Expo and application code; it is
+pinned rather than tracking `latest`.
+
+The TV runtime uses `Platform.isTV` to select a persistent, remote-focused side
+navigation and larger catalogue cards. React Native TV's focus engine provides
+D-pad movement, while preferred initial focus, high-contrast focused borders,
+hardware Back handling, and modal close focus make entry and restoration
+predictable. Player buttons accept Select and the remote play/pause event; Left
+and Right seek by ten seconds when the active media implementation supports it.
+The web header/player and Android phone navigation remain selected on their
+existing platform paths.
+
+Source: [Expo — Build apps for TV](https://docs.expo.dev/guides/building-for-tv/).

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Platform, SafeAreaView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Header } from '../components/Header';
 import { MobileNavigation } from '../components/MobileNavigation';
 import { ContentDetails } from '../components/ContentDetails';
@@ -23,6 +23,8 @@ import { currentPath, KNOWN_ROUTES, navigate as go, replace as replaceRoute } fr
 import { tokens } from '../theme/tokens';
 import { editorialTitles, routeEditorial } from '../data/editorial';
 import { technicalPlaybackTestsEnabled } from '../config/features';
+import { TVNavigation } from '../components/TVNavigation';
+import { isTV, useTVRemote } from '../tv/useTVRemote';
 
 const titleIdFromPath = path => path.startsWith('/title/') ? decodeURIComponent(path.slice(7)) : '';
 const selectedProfileOf = user => user?.selectedProfile || user?.activeProfile || user?.profile || (Array.isArray(user?.profiles) ? user.profiles.find(profile => profile.selected || profile.active) : null);
@@ -43,6 +45,8 @@ export function AppShell() {
   const [state, setState] = useState({ loading: true, error: '', service: 'ready', rows: [], catalogue: [], technical: [], hero: null });
   const navigate = useCallback(next => go(next, setPath), []);
   const replace = useCallback(next => replaceRoute(next, setPath), []);
+  const tvBack = useCallback(() => { if (player) setPlayer(null); else if (details) setDetails(null); else if (path !== '/browse') navigate('/browse'); }, [details, navigate, path, player]);
+  useTVRemote(undefined, tvBack);
 
   useEffect(() => { if (typeof window === 'undefined') return; const pop = () => setPath(currentPath()); window.addEventListener('popstate', pop); return () => window.removeEventListener('popstate', pop); }, []);
 
@@ -158,6 +162,6 @@ export function AppShell() {
   const publicWelcome = path === '/';
   const authPage = ['/signin','/signup','/forgot-password','/reset-password'].includes(path);
   const selectedProfile=selectedProfileOf(user);
-  return <SafeAreaView style={styles.safe}>{!publicWelcome && !authPage ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} user={user} profile={selectedProfile} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{compact && !publicWelcome && !authPage ? <MobileNavigation path={path} navigate={navigate} user={user} profile={selectedProfile} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></SafeAreaView>;
+  return <SafeAreaView style={styles.safe}><View style={styles.shell}>{isTV && !publicWelcome && !authPage ? <TVNavigation path={path} navigate={navigate} user={user}/> : null}<View style={styles.main}>{!isTV && !publicWelcome && !authPage ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} user={user} profile={selectedProfile} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{!isTV && compact && !publicWelcome && !authPage ? <MobileNavigation path={path} navigate={navigate} user={user} profile={selectedProfile} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></View></View></SafeAreaView>;
 }
-const styles = StyleSheet.create({ safe: { flex:1, minHeight:'100vh', minHeight:'100svh', minHeight:'100dvh', backgroundColor:'#05030d' }, body: { flex:1, minWidth:0, minHeight:0, backgroundColor:'#05030d', overflowX:'hidden' } });
+const styles = StyleSheet.create({ safe: { flex:1, minHeight:Platform.OS==='web'?'100dvh':undefined, backgroundColor:'#05030d' }, shell:{flex:1,flexDirection:'row'}, main:{flex:1,minWidth:0}, body: { flex:1, minWidth:0, minHeight:0, backgroundColor:'#05030d', overflowX:'hidden' } });

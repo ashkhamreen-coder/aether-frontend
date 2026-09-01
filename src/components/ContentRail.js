@@ -56,7 +56,7 @@ export function ContentRail({ row, onOpen, technical = false, first = false }) {
         snapToAlignment="start"
         contentContainerStyle={[s.rail, { paddingHorizontal: gutter, gap, scrollPaddingInline: gutter }]}
       >
-        {row.items.map((item, index) => <ContentCard key={item.id || item._id || index} item={item} portrait={row.portrait} technical={technical} rank={row.displayRanking === true && Number.isInteger(item.rank) ? item.rank : undefined} onOpen={() => open(item)}/>) }
+        {row.items.map((item, index) => <ContentCard key={item.id || item._id || index} item={item} preferredFocus={first && index === 0} portrait={row.portrait} technical={technical} rank={row.displayRanking === true && Number.isInteger(item.rank) ? item.rank : undefined} onOpen={() => open(item)}/>) }
       </ScrollView>
       {arrows ? <>
         <Pressable disabled={atStart} accessibilityRole="button" accessibilityLabel={`Scroll ${row.title} left`} accessibilityState={{ disabled: atStart }} onPress={() => move(-1)} style={[s.arrow, s.left, !active && s.arrowHidden, atStart && s.arrowDisabled]}><Text style={s.arrowText}>‹</Text></Pressable>
