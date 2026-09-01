@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { tokens } from '../theme/tokens';
 
 const links = [
-  ['/', 'home', 'Home'],
+  ['/browse', 'home', 'Home'],
   ['/new', 'spark', 'New'],
   ['/search', 'search', 'Search'],
   ['/my-list', 'bookmark', 'My List'],
