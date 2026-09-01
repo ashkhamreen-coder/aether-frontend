@@ -45,12 +45,11 @@ test('Get Started validates email and prefills sign-up', () => {
 test('welcome headline uses responsive pixel line heights and is never artificially clipped', () => {
   const source = welcome();
   assert.match(source, /fontSize:36,lineHeight:40/);
-  assert.match(source, /fontSize:42,lineHeight:46/);
-  assert.match(source, /fontSize:58,lineHeight:63/);
-  assert.match(source, /fontSize:76,lineHeight:80/);
-  assert.match(source, /fontSize:92,lineHeight:96/);
+  assert.match(source, /fontSize:44,lineHeight:48/);
+  assert.match(source, /fontSize:68,lineHeight:72/);
+  assert.match(source, /fontSize:88,lineHeight:92/);
   assert.doesNotMatch(source, /lineHeight:\s*1(?:\.0?2|\.1)?[,}]/);
-  for (const [, fontSize, lineHeight] of source.matchAll(/fontSize:(36|42|58|76|92),lineHeight:(40|46|63|80|96)/g)) {
+  for (const [, fontSize, lineHeight] of source.matchAll(/fontSize:(36|44|68|88),lineHeight:(40|48|72|92)/g)) {
     assert.ok(Number(lineHeight) > Number(fontSize) * .9, `rendered line box ${lineHeight}px must exceed 90% of ${fontSize}px font size`);
   }
   assert.match(source, /testID="welcome-headline"/);
