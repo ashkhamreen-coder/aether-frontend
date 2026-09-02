@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { tokens } from '../theme/tokens';
 
 const baseLinks = [
@@ -34,7 +34,7 @@ export function MobileNavigation({ navigate, path, hidden = false, user, profile
 
 const stroke = { borderColor: '#aaa8b8', borderWidth: 1.8 };
 const s = StyleSheet.create({
-  nav: { position:'absolute', left:0, right:0, bottom:0, minHeight:64, paddingBottom:'max(6px, env(safe-area-inset-bottom))', paddingLeft:'env(safe-area-inset-left)', paddingRight:'env(safe-area-inset-right)', flexDirection:'row', borderTopWidth:1, borderTopColor:'rgba(255,255,255,.1)', backgroundColor:'rgba(7,7,13,.94)', backdropFilter:'blur(18px)', zIndex:40 },
+  nav: { position:'absolute', left:0, right:0, bottom:0, minHeight:64, paddingBottom:Platform.OS==='web'?'max(6px, env(safe-area-inset-bottom))':6, paddingLeft:Platform.OS==='web'?'env(safe-area-inset-left)':0, paddingRight:Platform.OS==='web'?'env(safe-area-inset-right)':0, flexDirection:'row', borderTopWidth:1, borderTopColor:'rgba(255,255,255,.1)', backgroundColor:'rgba(7,7,13,.94)', ...(Platform.OS==='web'?{backdropFilter:'blur(18px)'}:{}), zIndex:40 },
   item: { flex:1, minWidth:44, minHeight:58, alignItems:'center', justifyContent:'center', gap:3, opacity:.78 }, pressed:{ opacity:.5, transform:[{scale:.96}] },
   iconFrame:{ width:24, height:24, alignItems:'center', justifyContent:'center' }, iconActive:{ opacity:1 },
   label:{ color:tokens.color.muted, fontSize:10, fontWeight:'650' }, active:{ color:tokens.color.accentSoft, fontWeight:'900' },

@@ -38,7 +38,7 @@ test('welcome Sign In and Explore Ripple open their real routes', () => {
 test('Get Started validates email and prefills sign-up', () => {
   assert.match(welcome(), /validEmail\(email\)/);
   assert.match(welcome(), /navigate\(`\/signup\?email=\$\{encodeURIComponent\(email\.trim\(\)\)\}`\)/);
-  assert.match(shell(), /new URLSearchParams\(window\.location\.search\)\.get\('email'\)/);
+  assert.match(shell(), /Platform\.OS === 'web' \? new URLSearchParams\(globalThis\.window\.location\.search\)\.get\('email'\)/);
   assert.match(read('src/screens/AuthScreen.js'), /useState\(initialEmail\)/);
 });
 
