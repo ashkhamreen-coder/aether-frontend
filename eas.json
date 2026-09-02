@@ -10,7 +10,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://ripple-api-p67c.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://ripple-api-p67c.onrender.com",
+        "EXPO_PUBLIC_BUILD_PROFILE": "development"
       }
     },
     "preview": {
@@ -19,7 +20,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://ripple-api-p67c.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://ripple-api-p67c.onrender.com",
+        "EXPO_PUBLIC_BUILD_PROFILE": "preview"
       }
     },
     "production": {
