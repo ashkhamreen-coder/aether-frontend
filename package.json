@@ -18,6 +18,7 @@
     "android:prebuild": "expo prebuild --platform android",
     "build:android:development": "eas build --platform android --profile development",
     "build:android:preview": "eas build --platform android --profile preview",
+    "build:android:tv": "eas build --platform android --profile tv",
     "build:android:production": "eas build --platform android --profile production"
   },
   "engines": {
