@@ -45,11 +45,12 @@ export function AppShell() {
   const [saved, setSaved] = useState(new Set());
   const [listError, setListError] = useState('');
   const listPending = useRef(new Set());
+  const detailOrigin = useRef('/browse');
   const previousUser = useRef(null);
   const [state, setState] = useState({ loading: true, error: '', service: 'ready', rows: [], catalogue: [], technical: [], hero: null });
   const navigate = useCallback(next => go(next, setPath), []);
   const replace = useCallback(next => replaceRoute(next, setPath), []);
-  const tvBack = useCallback(() => { if (player) setPlayer(null); else if (details) setDetails(null); else if (path !== '/browse') navigate('/browse'); }, [details, navigate, path, player]);
+  const tvBack = useCallback(() => { if (player) setPlayer(null); else if (details || titleIdFromPath(path)) navigate(detailOrigin.current); else if (path !== '/browse') navigate('/browse'); }, [details, navigate, path, player]);
   useTVRemote(undefined, tvBack);
   useEffect(() => { if (previousUser.current && !user) closeViewerSession(setPlayer, setDetails, setSaved); previousUser.current = user; }, [user]);
 
@@ -115,8 +116,8 @@ export function AppShell() {
   }, []);
 
   useEffect(() => { const id = titleIdFromPath(path); if (id) loadDetails(id); else setDetails(null); }, [path, loadDetails]);
-  const open = useCallback(item => { if (item?.isEditorialPreview) { setDetails(item); return; } const id = idOf(item); if (id) navigate(`/title/${encodeURIComponent(id)}`); }, [navigate]);
-  const closeDetails = useCallback(() => navigate('/browse'), [navigate]);
+  const open = useCallback(item => { detailOrigin.current=path.startsWith('/title/')?'/browse':path; if (item?.isEditorialPreview) { setDetails(item); return; } const id = idOf(item); if (id) navigate(`/title/${encodeURIComponent(id)}`); }, [navigate,path]);
+  const closeDetails = useCallback(() => navigate(detailOrigin.current), [navigate]);
 
   const play = useCallback(async item => {
     const id = idOf(item); if (!id) return;

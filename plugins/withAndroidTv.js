@@ -1,17 +1,20 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const PLACEHOLDER_RESOURCES = {
-  'app_icon_placeholder.xml': `<?xml version="1.0" encoding="utf-8"?>
+const TV_RESOURCES = {
+  'ripple_app_icon.xml': `<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
   <path android:fillColor="#05030D" android:pathData="M0,0h108v108h-108z" />
-  <path android:fillColor="#9B7BFF" android:pathData="M24,27h60v12h-24v42h-12v-42h-24z" />
+  <path android:fillColor="#FFFFFF" android:pathData="M25,22h31c18,0 29,9 29,25c0,11 -6,19 -16,23l18,16h-22l-15,-14h-8v14h-17zM42,37v21h13c8,0 13,-4 13,-11c0,-7 -5,-10 -13,-10z" />
 </vector>
 `,
-  'tv_banner_placeholder.xml': `<?xml version="1.0" encoding="utf-8"?>
+  'ripple_tv_banner.xml': `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-  <item><shape><solid android:color="#05030D" /></shape></item>
+  <item><shape><gradient android:angle="0" android:startColor="#05030D" android:endColor="#241747" /></shape></item>
+  <item android:left="112dp" android:right="112dp" android:top="40dp" android:bottom="40dp">
+    <shape android:shape="rectangle"><corners android:radius="12dp"/><stroke android:width="2dp" android:color="#B9A5FF"/><solid android:color="#171027"/></shape>
+  </item>
 </layer-list>
 `,
 };
@@ -29,8 +32,11 @@ function applyTvManifest(androidManifest) {
   ) || application?.activity?.[0];
   if (!application || !activity) throw new Error('Android main application/activity is missing.');
 
-  setAttribute(application, 'banner', '@drawable/tv_banner_placeholder');
-  setAttribute(application, 'icon', '@drawable/app_icon_placeholder');
+  setAttribute(application, 'banner', '@drawable/ripple_tv_banner');
+  // Keep a deterministic icon on generated phone and TV builds when no Expo icon
+  // is configured. This is Ripple artwork, not the old Aether placeholder.
+  setAttribute(application, 'icon', '@drawable/ripple_app_icon');
+  setAttribute(application, 'label', 'Ripple');
 
   manifest['uses-feature'] = manifest['uses-feature'] || [];
   const features = [
@@ -75,7 +81,7 @@ function withAndroidTv(config) {
       'app/src/main/res/drawable'
     );
     await fs.promises.mkdir(drawableDirectory, { recursive: true });
-    await Promise.all(Object.entries(PLACEHOLDER_RESOURCES).map(([name, contents]) =>
+    await Promise.all(Object.entries(TV_RESOURCES).map(([name, contents]) =>
       fs.promises.writeFile(path.join(drawableDirectory, name), contents)
     ));
     return mod;
@@ -84,4 +90,4 @@ function withAndroidTv(config) {
 
 module.exports = withAndroidTv;
 module.exports.applyTvManifest = applyTvManifest;
-module.exports.PLACEHOLDER_RESOURCES = PLACEHOLDER_RESOURCES;
+module.exports.TV_RESOURCES = TV_RESOURCES;

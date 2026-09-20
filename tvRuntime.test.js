@@ -10,9 +10,10 @@ test('pins the Expo SDK 54 React Native TV release through the react-native alia
 
 test('TV runtime provides platform selection, D-pad events, Back, and preferred focus', () => {
   const remote = read('src/tv/useTVRemote.js');
+  const runtime = read('src/tv/runtime.js');
   const shell = read('src/navigation/AppShell.js');
   const navigation = read('src/components/TVNavigation.js');
-  assert.match(remote, /Platform\.isTV/);
+  assert.match(runtime, /Platform\.isTV/);
   assert.match(remote, /TVEventHandler/);
   assert.match(remote, /hardwareBackPress/);
   assert.match(shell, /TVNavigation/);
@@ -25,8 +26,10 @@ test('TV cards and player expose focus and remote-compatible controls', () => {
   const player = read('src/components/VideoPlayer/index.native.js');
   assert.match(card, /Platform\.isTV/);
   assert.match(card, /preferredFocus/);
-  assert.match(player, /eventType==='left'/);
-  assert.match(player, /eventType==='right'/);
-  assert.match(player, /eventType==='playPause'/);
+  assert.match(player, /remoteAction\(event\)/);
+  assert.match(player, /action==='left'/);
+  assert.match(player, /action==='right'/);
+  assert.match(player, /action==='playPause'/);
+  assert.match(player, /playerBackAction/);
   assert.match(player, /focused&&s\.focus/);
 });
