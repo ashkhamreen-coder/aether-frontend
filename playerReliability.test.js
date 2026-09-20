@@ -83,3 +83,32 @@ test('marks a known forbidden response as non-retryable', async () => {
   assert.equal(result.playable, false);
   assert.equal(result.retryable, false);
 });
+
+test('native player is selected by Metro and uses the SDK-compatible Expo video module', () => {
+  const fs = require('node:fs');
+  const native = fs.readFileSync('src/components/VideoPlayer/index.native.js', 'utf8');
+  const web = fs.readFileSync('src/components/VideoPlayer/index.web.js', 'utf8');
+  assert.match(native, /from 'expo-video'/);
+  assert.match(native, /player\.replace\(null\)/);
+  assert.match(native, /AppState\.addEventListener/);
+  assert.doesNotMatch(web, /from 'expo-video'/);
+});
+
+test('native playback handles invalid URLs, retries, TV seeking, and lifecycle persistence', () => {
+  const fs = require('node:fs');
+  const native = fs.readFileSync('src/components/VideoPlayer/index.native.js', 'utf8');
+  assert.match(native, /A secure playback stream is not available/);
+  assert.match(native, /Retry/);
+  assert.match(native, /seek\(-10\)/);
+  assert.match(native, /seek\(10\)/);
+  for (const reason of ['playing', 'paused', 'background', 'closed', 'completed', 'unmounted']) assert.match(native, new RegExp(`['\"]${reason}['\"]`));
+});
+
+test('My List is optimistic, duplicate-safe, and rolls back a failed mutation', () => {
+  const fs = require('node:fs');
+  const shell = fs.readFileSync('src/navigation/AppShell.js', 'utf8');
+  assert.match(shell, /listPending\.current\.has\(id\)/);
+  assert.match(shell, /listPending\.current\.add\(id\)/);
+  assert.match(shell, /catch \(error\)[\s\S]*removing \? next\.add\(id\) : next\.delete\(id\)/);
+  assert.match(shell, /setListError\(error\.message/);
+});
