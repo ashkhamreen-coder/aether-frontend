@@ -29,7 +29,7 @@ This checklist records the latest viewer capabilities audited before the cinemat
 ## Trust, playback, and accessibility
 
 - [ ] AI disclosure and cultural context render when supplied; sharing and reporting contracts are not present
-- [ ] Web MP4/HLS playback, browser-native controls, retry, progress reporting, and cleanup are wired; Android/TV playback is backend-independent but blocked on a compatible native media module
+- [x] Platform-specific Web and Expo Video native MP4/HLS players provide retry, lifecycle cleanup, throttled progress reporting, resume when supplied, Android controls, and remote-friendly Android TV controls (device verification remains required)
 - [ ] Seasons, next episode, autoplay, subtitle selection, audio selection, and quality selection are not implemented because their contracts are not present
 - [x] Semantic navigation, buttons, labelled player controls, keyboard focus, modal focus restoration, reduced motion, contrast, and 44px targets
 

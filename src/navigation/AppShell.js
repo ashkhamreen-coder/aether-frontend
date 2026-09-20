@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, SafeAreaView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Header } from '../components/Header';
 import { MobileNavigation } from '../components/MobileNavigation';
@@ -28,6 +28,7 @@ import { isTV, useTVRemote } from '../tv/useTVRemote';
 
 const titleIdFromPath = path => path.startsWith('/title/') ? decodeURIComponent(path.slice(7)) : '';
 const selectedProfileOf = user => user?.selectedProfile || user?.activeProfile || user?.profile || (Array.isArray(user?.profiles) ? user.profiles.find(profile => profile.selected || profile.active) : null);
+const closeViewerSession = (setPlayer, setDetails, setSaved) => { setPlayer(null); setDetails(null); setSaved(new Set()); };
 const needsOnboarding = user => Boolean(user && (user.needsOnboarding === true || user.onboardingComplete === false || user.preferencesComplete === false));
 
 export function AppShell() {
@@ -42,11 +43,15 @@ export function AppShell() {
   const [detailState, setDetailState] = useState({ loading: false, error: '' });
   const [player, setPlayer] = useState(null);
   const [saved, setSaved] = useState(new Set());
+  const [listError, setListError] = useState('');
+  const listPending = useRef(new Set());
+  const previousUser = useRef(null);
   const [state, setState] = useState({ loading: true, error: '', service: 'ready', rows: [], catalogue: [], technical: [], hero: null });
   const navigate = useCallback(next => go(next, setPath), []);
   const replace = useCallback(next => replaceRoute(next, setPath), []);
   const tvBack = useCallback(() => { if (player) setPlayer(null); else if (details) setDetails(null); else if (path !== '/browse') navigate('/browse'); }, [details, navigate, path, player]);
   useTVRemote(undefined, tvBack);
+  useEffect(() => { if (previousUser.current && !user) closeViewerSession(setPlayer, setDetails, setSaved); previousUser.current = user; }, [user]);
 
   useEffect(() => { if (Platform.OS !== 'web') return; const pop = () => setPath(currentPath()); globalThis.window.addEventListener('popstate', pop); return () => globalThis.window.removeEventListener('popstate', pop); }, []);
 
@@ -125,12 +130,26 @@ export function AppShell() {
     } catch (error) { setDetails({ ...item, playbackError: error.message, mediaStatus: error.code === 'MEDIA_PROCESSING' ? 'processing' : 'unavailable' }); }
   }, [navigate]);
 
-  const toggleList = useCallback(item => {
-    if (!user) return;
-    const id = idOf(item); if (!id) return;
+  const toggleList = useCallback(async item => {
+    if (!user) { navigate('/signin'); return; }
+    const id = idOf(item); if (!id || listPending.current.has(id)) return;
     const removing = saved.has(id);
-    api(`/api/content/${encodeURIComponent(id)}/my-list`, { method: removing ? 'DELETE' : 'POST' }).then(() => setSaved(old => { const next = new Set(old); removing ? next.delete(id) : next.add(id); return next; })).catch(() => {});
-  }, [user, saved]);
+    listPending.current.add(id);
+    setListError('');
+    setSaved(old => { const next = new Set(old); removing ? next.delete(id) : next.add(id); return next; });
+    try {
+      await api(`/api/content/${encodeURIComponent(id)}/my-list`, { method: removing ? 'DELETE' : 'POST' });
+    } catch (error) {
+      setSaved(old => { const next = new Set(old); removing ? next.add(id) : next.delete(id); return next; });
+      setListError(error.message || 'My List could not be updated. Please try again.');
+    } finally { listPending.current.delete(id); }
+  }, [navigate, user, saved]);
+
+  const closePlayer = useCallback(() => setPlayer(null), []);
+  const persistPlayback = useCallback((position, duration) => {
+    const id = idOf(player);
+    if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {});
+  }, [player, user]);
 
   const catalogue = useMemo(() => state.catalogue.filter(item => !isTechnicalTest(item)), [state.catalogue]);
   let screen;
@@ -165,6 +184,6 @@ export function AppShell() {
   const publicWelcome = path === '/';
   const authPage = ['/signin','/signup','/forgot-password','/reset-password'].includes(path);
   const selectedProfile=selectedProfileOf(user);
-  return <SafeAreaView style={styles.safe}><View style={styles.shell}>{isTV && !publicWelcome && !authPage ? <TVNavigation path={path} navigate={navigate} user={user}/> : null}<View style={styles.main}>{!isTV && !publicWelcome && !authPage ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} user={user} profile={selectedProfile} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{!isTV && compact && !publicWelcome && !authPage ? <MobileNavigation path={path} navigate={navigate} user={user} profile={selectedProfile} hidden={Boolean(player)}/> : null}<ContentDetails item={details} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={() => setPlayer(null)} onProgress={(position, duration) => { const id = idOf(player); if (user && id) api(`/api/content/${encodeURIComponent(id)}/progress`, { method: 'PUT', body: JSON.stringify(progressPayload(position, duration)) }).catch(() => {}); }}/></View></View></SafeAreaView>;
+  return <SafeAreaView style={styles.safe}><View style={styles.shell}>{isTV && !publicWelcome && !authPage ? <TVNavigation path={path} navigate={navigate} user={user}/> : null}<View style={styles.main}>{!isTV && !publicWelcome && !authPage ? <Header overlay={path === '/browse'} scrolled={headerScrolled} path={path} navigate={navigate} compact={compact} user={user} profile={selectedProfile} plan={subscription?.plan?.name||subscription?.planName} onSignIn={() => navigate(user ? '/account' : '/signin')}/> : null}<View style={styles.body}>{screen}</View>{!isTV && compact && !publicWelcome && !authPage ? <MobileNavigation path={path} navigate={navigate} user={user} profile={selectedProfile} hidden={Boolean(player)}/> : null}<ContentDetails item={details} listError={listError} onClose={closeDetails} onOpen={open} onPlay={play} onToggleList={user ? toggleList : null} saved={details && saved.has(idOf(details))}/><VideoPlayer item={player} onClose={closePlayer} onProgress={persistPlayback}/></View></View></SafeAreaView>;
 }
 const styles = StyleSheet.create({ safe: { flex:1, minHeight:Platform.OS==='web'?'100dvh':undefined, backgroundColor:'#05030d' }, shell:{flex:1,flexDirection:'row'}, main:{flex:1,minWidth:0}, body: { flex:1, minWidth:0, minHeight:0, backgroundColor:'#05030d', ...(Platform.OS==='web'?{overflowX:'hidden'}:{overflow:'hidden'}) } });

@@ -22,7 +22,7 @@ test('TV runtime provides platform selection, D-pad events, Back, and preferred 
 
 test('TV cards and player expose focus and remote-compatible controls', () => {
   const card = read('src/components/ContentCard.js');
-  const player = read('src/components/VideoPlayer.js');
+  const player = read('src/components/VideoPlayer/index.native.js');
   assert.match(card, /Platform\.isTV/);
   assert.match(card, /preferredFocus/);
   assert.match(player, /eventType==='left'/);
