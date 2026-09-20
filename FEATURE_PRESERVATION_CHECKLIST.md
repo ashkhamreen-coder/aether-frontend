@@ -16,21 +16,21 @@ This checklist records the latest viewer capabilities audited before the cinemat
 - [x] Viewer-profile, profile-selection, create/edit-profile, kids-profile, and account route architecture
 - [x] Country, language, subtitle, genre, and maturity onboarding architecture
 - [x] Personalized backend Home rows, including Continue Watching, Top 10, Trending, Popular by country/globally, new/recent titles, Top Picks, and Because You Watched
-- [x] My List, likes, Not Interested, creator-following, watch-progress, and resume API architecture
+- [ ] My List hydration, likes, Not Interested, creator-following, history, and resume reads require documented backend contracts; only My List and progress mutations are currently wired
 
 ## Discovery and catalogue
 
 - [x] Backend-driven Home, search/suggestions/filter architecture, genre/language routes, and New & Popular
-- [x] Film, series, short, season, episode, similar-title, and content-detail architecture
+- [ ] Film, series, short, and content details are wired; seasons, episodes, and backend similar-title contracts are not present
 - [x] Region and maturity eligibility remain backend-authoritative
 - [x] Editorial mythology/AI-cinema previews are visibly labelled “Editorial preview” and “Coming Soon”
 - [x] Backend-supplied popularity/ranks only; no fabricated rankings or view counts
 
 ## Trust, playback, and accessibility
 
-- [x] AI disclosure, cultural context, origin/language/subtitle metadata, sharing, and reporting presentation
-- [x] MP4 playback, HLS fallback, poster, native controls, captions, fullscreen, retry, progress reporting, and cleanup
-- [x] Next-episode data architecture remains accepted from playback/detail payloads
+- [ ] AI disclosure and cultural context render when supplied; sharing and reporting contracts are not present
+- [ ] Web MP4/HLS playback, browser-native controls, retry, progress reporting, and cleanup are wired; Android/TV playback is backend-independent but blocked on a compatible native media module
+- [ ] Seasons, next episode, autoplay, subtitle selection, audio selection, and quality selection are not implemented because their contracts are not present
 - [x] Semantic navigation, buttons, labelled player controls, keyboard focus, modal focus restoration, reduced motion, contrast, and 44px targets
 
 ## Visual correction guardrails

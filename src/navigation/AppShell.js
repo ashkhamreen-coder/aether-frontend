@@ -82,7 +82,10 @@ export function AppShell() {
           await load();
           if (needsOnboarding(resolvedUser) && !['/onboarding','/profiles/new'].includes(currentPath())) replace('/onboarding');
         }
-      } catch { await clearSession(); }
+      } catch (error) {
+        if (error?.status === 401 || error?.status === 403) await clearSession();
+        else if (active && session?.user && typeof session.user === 'object') setUser(session.user);
+      }
     }).finally(() => { if (active) setAuthResolved(true); });
     return () => { active = false; };
   }, [load, replace]);

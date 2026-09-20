@@ -21,3 +21,4 @@ test('uses the API URL captured from the build environment when no mock is passe
   );
   assert.equal(output, 'https://build-api.example.com');
 });
+test('runtime resolution permits a recoverable not-configured screen',()=>{const {resolveApiBaseUrl}=require('./apiConfig');const result=resolveApiBaseUrl({NODE_ENV:'production'});assert.equal(result.baseUrl,'');assert.match(result.error.message,/required/)});
