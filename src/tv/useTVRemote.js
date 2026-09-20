@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { BackHandler, Platform, TVEventHandler } from 'react-native';
+import { isTVDevice } from './runtime';
 
-export const isTV = Platform.isTV === true;
+export const isTV = isTVDevice;
 
 export function useTVRemote(onEvent, onBack) {
   useEffect(() => {
