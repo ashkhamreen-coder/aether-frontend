@@ -34,7 +34,12 @@ function createApiClient({ baseUrl, getToken, refreshToken, onUnauthorized, fetc
           headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
         });
         const type = response.headers?.get?.('content-type') || '';
-        const data = type.includes('json') ? await response.json().catch(() => ({})) : {};
+        let data = {};
+        if (type.includes('json') && response.status !== 204) {
+          try { data = await response.json(); }
+          catch (cause) { throw new ApiError('Ripple received an invalid response.', { status: response.status, code: 'MALFORMED_RESPONSE', cause }); }
+          if (data === null || typeof data !== 'object') throw new ApiError('Ripple received an invalid response.', { status: response.status, code: 'MALFORMED_RESPONSE' });
+        }
         if (response.status === 401 && refreshToken && !options._refreshed) {
           const refreshed = await refreshToken();
           if (refreshed) return request(normalizedPath, { ...options, _refreshed: true, retries: 0 });

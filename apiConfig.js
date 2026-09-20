@@ -17,4 +17,9 @@ function getApiBaseUrl(env) {
   throw new Error('EXPO_PUBLIC_API_URL is required. Copy .env.example for local development.');
 }
 
-module.exports = { getApiBaseUrl };
+function resolveApiBaseUrl(env) {
+  try { return { baseUrl: getApiBaseUrl(env), error: null }; }
+  catch (error) { return { baseUrl: '', error }; }
+}
+
+module.exports = { getApiBaseUrl, resolveApiBaseUrl };

@@ -12,6 +12,8 @@ The frontend requests `/api/content/:id/playback` and mounts a player only when 
 
 If Render currently returns a storage error page, the backend must refresh the signed object URL before returning `/api/content/:id`. This cannot be corrected by frontend substitution.
 
+Web playback uses the browser media element and an HLS fallback. **Native Android/Android TV playback is not implemented in this repository**: no Expo-compatible native video module is installed, so the native player currently presents an unavailable state rather than pretending to play. Adding native playback requires selecting and installing an SDK-54/`react-native-tvos` compatible media module, rebuilding the native clients, and verifying lifecycle, backgrounding, remote controls, and progress on devices.
+
 ## Required production configuration
 
 Set `EXPO_PUBLIC_API_URL` to the HTTPS backend origin in every build environment. The build intentionally fails when it is absent, and production builds fail when it is insecure. The frontend contains no localhost fallback.
@@ -40,3 +42,9 @@ The viewer uses History API paths. Configure the Render static-site rewrite `/*`
 ## Backend capabilities and rollout
 
 Creator Studio is intentionally excluded from this consumer build. Before enabling each consumer surface, document response schemas for profiles, preferences, dynamic home rows, cursor pagination, aggregate popularity, playback sessions/progress, recommendations, feedback, creator follows, reports, and search facets. The UI must keep unavailable capabilities honest rather than synthesizing success or catalogue statistics.
+
+The repository currently calls only the documented paths visible in the source. It has no verified contracts for creator profiles/filmographies, uploads or transcoding, comments, likes, follows, notification registration, watchlist hydration, history retrieval, recommendation pagination, seasons/episodes, subtitle/audio/quality manifests, or cross-device resume retrieval. Those surfaces must remain absent until backend schemas and authorization behavior are supplied. The existing My List mutation (`POST`/`DELETE /api/content/:id/my-list`) and progress mutation (`PUT /api/content/:id/progress`) need backend integration tests and authoritative read responses before their relaunch/cross-device journeys can be certified.
+
+## Release verification
+
+Repository render tests and prebuild checks do not reproduce an installed APK process death. A production-signed APK/AAB must still be exercised on phone and TV with `adb logcat` retained across cold launch, corrupt/expired storage, sign-up, sign-in, offline launch, playback, background/resume, and process recreation. Do not label the Android crash resolved until those runs pass.

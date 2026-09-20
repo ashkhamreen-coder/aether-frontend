@@ -1,10 +1,11 @@
 import { createApiClient } from '../../apiClient';
-import { getApiBaseUrl } from '../../apiConfig';
+import { resolveApiBaseUrl } from '../../apiConfig';
 import { clearSession, getAccessToken, setAccessToken } from './session';
 
-const baseUrl = getApiBaseUrl();
+const { baseUrl, error: configurationError } = resolveApiBaseUrl();
 let client;
 async function refreshToken() {
+  if (!baseUrl) return false;
   try {
     const response = await fetch(`${baseUrl}/api/auth/refresh`, { method:'POST', credentials:'include', headers:{ Accept:'application/json' } });
     if (!response.ok) return false;
@@ -18,4 +19,4 @@ export function api(path, options) {
   client ||= createApiClient({ baseUrl, getToken:getAccessToken, refreshToken, onUnauthorized:clearSession, timeoutMs:15000 });
   return client.request(path, options);
 }
-export { baseUrl };
+export { baseUrl, configurationError };
