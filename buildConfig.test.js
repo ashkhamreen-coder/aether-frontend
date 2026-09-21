@@ -14,6 +14,10 @@ test('production Android identity and source-only EAS profiles are stable', () =
   assert.equal(pkg.dependencies['react-native'], 'npm:react-native-tvos@0.81.5-0');
   assert.equal(eas.build.development.android.buildType, 'apk');
   assert.equal(eas.build.preview.android.buildType, 'apk');
+  assert.equal(eas.build.tv.distribution, 'internal');
+  assert.equal(eas.build.tv.android.buildType, 'apk');
+  assert.equal(eas.build.tv.env.EXPO_PUBLIC_BUILD_PROFILE, 'preview');
+  assert.equal(pkg.scripts['build:android:tv'], 'eas build --platform android --profile tv');
   assert.equal(eas.build.production.android.buildType, 'app-bundle');
   for (const profile of Object.values(eas.build)) {
     assert.equal(profile.env.EXPO_PUBLIC_API_URL, 'https://ripple-api-p67c.onrender.com');

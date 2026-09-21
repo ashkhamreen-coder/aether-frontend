@@ -28,14 +28,21 @@ EXPO_PUBLIC_API_URL=https://ripple-api-p67c.onrender.com npm run android:prebuil
 npm run android
 ```
 
-Cloud profiles are source-only configuration. Development and preview emit APKs;
-production emits an AAB:
+Cloud profiles are source-only configuration. Development, preview, and the
+dedicated TV profile emit installable APKs; production emits an AAB:
 
 ```bash
 npm run build:android:development
 npm run build:android:preview
+npm run build:android:tv
 npm run build:android:production
 ```
+
+Use `npm run build:android:tv` for an OTT TV sideload build. When EAS finishes,
+download the APK from the build URL printed by the command and install it with
+`adb install -r /external/path/ripple.apk`. The TV profile uses internal
+distribution, includes the production API URL, and keeps preview diagnostics
+enabled so sideload testers receive actionable startup failures.
 
 Download build artifacts outside this repository. Install an APK on a connected
 phone, tablet, or TV with `adb devices` followed by
